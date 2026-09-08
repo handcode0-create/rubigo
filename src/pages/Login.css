@@ -155,58 +155,24 @@
   color: var(--rubigo-danger);
   font-size: 11px;
 }
-.demo-access {
-  margin-top: 38px;
-  padding-top: 23px;
+.login-info {
+  margin: -4px 0 0;
+  color: var(--rubigo-success);
+  font-size: 11px;
+}
+.auth-switch {
+  width: 100%;
+  margin-top: 24px;
+  padding-top: 20px;
   border-top: 1px solid var(--rubigo-border);
-}
-.demo-access > div {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 8px;
-}
-.demo-account {
-  display: grid;
-  grid-template-columns: 30px 1fr;
-  align-items: center;
-  gap: 0 8px;
-  padding: 10px;
-  border: 1px solid var(--rubigo-border);
-  border-radius: 7px;
-  color: var(--rubigo-text);
-  background: var(--rubigo-surface);
-  text-align: left;
-}
-.demo-account:hover {
-  border-color: var(--rubigo-primary);
-}
-.demo-account span {
-  grid-row: span 2;
-  display: grid;
-  place-items: center;
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
   color: var(--rubigo-primary);
-  background: var(--rubigo-primary-light);
-  font-size: 9px;
+  background: transparent;
+  font-size: 12px;
   font-weight: 700;
-}
-.demo-account strong {
-  font-size: 10px;
-}
-.demo-account small {
-  overflow: hidden;
-  color: var(--rubigo-text-muted);
-  font: 8px "DM Mono";
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.mock-notice {
-  margin: 22px 0 0;
-  color: #9aa49d;
-  font-size: 10px;
   text-align: center;
+}
+.auth-switch:hover {
+  text-decoration: underline;
 }
 @media (max-width: 760px) {
   .login-page {

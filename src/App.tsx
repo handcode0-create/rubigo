@@ -32,6 +32,7 @@ function AppShell() {
     cart,
     unreadNotifications,
     authenticated,
+    authLoading,
     switchToCustomer,
     isCartOpen,
     setIsCartOpen,
@@ -77,6 +78,24 @@ function AppShell() {
     handleHashChange();
     return () => window.removeEventListener("hashchange", handleHashChange);
   }, []);
+
+  if (authLoading) {
+    return (
+      <div
+        style={{
+          display: "grid",
+          placeItems: "center",
+          minHeight: "100vh",
+          color: "var(--rubigo-text-muted)",
+          background: "var(--rubigo-background)",
+          fontFamily: "'Space Grotesk', sans-serif",
+          fontSize: 14,
+        }}
+      >
+        Chargement de votre session…
+      </div>
+    );
+  }
 
   if (!authenticated) return <Login />;
 

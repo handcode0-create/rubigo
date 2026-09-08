@@ -13,7 +13,7 @@ import {
   user as initialUser,
 } from "../data";
 import { storage } from "../services/storageService";
-import { authenticate } from "../services/authService";
+import { authService } from "../services/authService";
 import { orderService } from "../services/orderService";
 import {
   calculateDeliveryFee,
@@ -39,10 +39,17 @@ export type CartConflict = {
   newMerchantName: string;
 };
 
+export type AuthActionResult = {
+  ok: boolean;
+  message?: string;
+  needsEmailConfirmation?: boolean;
+};
+
 type AppContextValue = {
   user: User;
   activeRole: Role;
   authenticated: boolean;
+  authLoading: boolean;
   orders: Order[];
   customers: User[];
   categories: Category[];
@@ -80,20 +87,28 @@ type AppContextValue = {
   ) => void;
   removeAddress: (addressId: string) => void;
   setDefaultAddress: (addressId: string) => void;
-  login: (email: string, password: string) => boolean;
-  logout: () => void;
+  login: (email: string, password: string) => Promise<AuthActionResult>;
+  register: (
+    fullName: string,
+    phone: string,
+    email: string,
+    password: string,
+  ) => Promise<AuthActionResult>;
+  logout: () => Promise<void>;
 };
 
 const AppContext = createContext<AppContextValue | null>(null);
 
+// Utilisateur "vide" affiché brièvement pendant la vérification de session.
+// L'application entière est masquée derrière l'écran de chargement/Login tant
+// qu'aucune session Supabase valide n'est confirmée, donc ces valeurs ne sont
+// jamais réellement affichées à l'écran.
+const emptyUser: User = { name: "", phone: "", initials: "", city: "" };
+
 export function AppProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User>(() => {
-    const storedUser = storage.get("user", initialUser);
-    return { ...storedUser, role: storedUser.role ?? "customer" };
-  });
-  const [authenticated, setAuthenticated] = useState(() =>
-    storage.get("session", false),
-  );
+  const [user, setUser] = useState<User>(emptyUser);
+  const [authenticated, setAuthenticated] = useState(false);
+  const [authLoading, setAuthLoading] = useState(true);
   const [favoriteMerchantIds, setFavoriteMerchantIds] = useState<string[]>(() =>
     storage.get("favorites", [merchants[1].id]),
   );
@@ -113,8 +128,61 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [cartConflict, setCartConflict] = useState<CartConflict | null>(null);
 
-  useEffect(() => storage.set("user", user), [user]);
-  useEffect(() => storage.set("session", authenticated), [authenticated]);
+  // Supabase Auth est la seule source de vérité pour l'identité et la session.
+  // On écoute la session au montage puis à chaque changement (login, logout,
+  // refresh de token, expiration) — jamais le localStorage pour cette décision.
+  useEffect(() => {
+    let isMounted = true;
+
+    const applySession = async (session: Awaited<ReturnType<typeof authService.getSession>>) => {
+      if (!session?.user) {
+        if (!isMounted) return;
+        setUser(emptyUser);
+        setAuthenticated(false);
+        setAuthLoading(false);
+        return;
+      }
+
+      const profile = await authService.ensureProfile(session.user);
+      if (!isMounted) return;
+
+      if (!profile) {
+        // Session Supabase valide mais profil introuvable/impossible à créer :
+        // on ne considère pas l'utilisateur comme authentifié côté app.
+        setUser(emptyUser);
+        setAuthenticated(false);
+        setAuthLoading(false);
+        return;
+      }
+
+      const cachedAddresses = storage.get<User["addresses"]>(
+        `addresses:${profile.id}`,
+        [],
+      );
+      setUser(authService.mapProfileToUser(profile, session.user.email, cachedAddresses));
+      setAuthenticated(true);
+      setAuthLoading(false);
+    };
+
+    authService.getSession().then(applySession);
+    const unsubscribe = authService.onAuthStateChange((session) => {
+      void applySession(session);
+    });
+
+    return () => {
+      isMounted = false;
+      unsubscribe();
+    };
+  }, []);
+
+  // Pont temporaire : tant que les adresses ne sont pas migrées vers Supabase
+  // (étape ultérieure), on les garde en local par utilisateur pour ne pas les
+  // perdre entre deux sessions. Ceci ne sert jamais à déterminer l'authentification.
+  useEffect(() => {
+    if (!user.id) return;
+    storage.set(`addresses:${user.id}`, user.addresses ?? []);
+  }, [user.id, user.addresses]);
+
   useEffect(
     () => storage.set("favorites", favoriteMerchantIds),
     [favoriteMerchantIds],
@@ -385,15 +453,30 @@ export function AppProvider({ children }: { children: ReactNode }) {
       })),
     }));
 
-  const login = (email: string, password: string) => {
-    const nextUser = authenticate(email, password);
-    if (!nextUser) return false;
-    setUser(nextUser);
-    setAuthenticated(true);
-    return true;
+  const login = async (email: string, password: string): Promise<AuthActionResult> => {
+    const result = await authService.signIn(email, password);
+    if (!result.ok) return { ok: false, message: result.message };
+    // La session déclenchée par signIn met à jour user/authenticated via
+    // onAuthStateChange (cf. useEffect ci-dessus) — pas besoin de le faire ici.
+    return { ok: true };
   };
 
-  const logout = () => setAuthenticated(false);
+  const register = async (
+    fullName: string,
+    phone: string,
+    email: string,
+    password: string,
+  ): Promise<AuthActionResult> => {
+    const result = await authService.signUp(email, password, { fullName, phone });
+    if (!result.ok) return { ok: false, message: result.message };
+    return { ok: true, needsEmailConfirmation: result.needsEmailConfirmation };
+  };
+
+  const logout = async () => {
+    await authService.signOut();
+    // onAuthStateChange se charge de remettre user/authenticated à leur état
+    // "déconnecté" dès que Supabase confirme la fin de session.
+  };
 
   const activeRole = user.role ?? "customer";
 
@@ -401,6 +484,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     user,
     activeRole,
     authenticated,
+    authLoading,
     orders,
     customers,
     categories,
@@ -437,6 +521,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     removeAddress,
     setDefaultAddress,
     login,
+    register,
     logout,
   };
 
