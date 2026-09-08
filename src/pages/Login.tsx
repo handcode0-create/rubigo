@@ -1,7 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { useApp } from '../context/AppContext'
 import type { Role } from '../types'
-import { ArrowRightIcon } from '../components/Icons'
 import './Login.css'
 
 const demoAccounts: {

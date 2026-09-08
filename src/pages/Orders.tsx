@@ -7,7 +7,6 @@ import {
   ChevronRight,
   Clock3,
   MapPin,
-  Minus,
   Package,
   ReceiptText,
   Search,
