@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+  #!/usr/bin/env python3
 # RUBIGO - Enrichissement des données de démonstration
 #
 # Usage depuis la racine du projet :
