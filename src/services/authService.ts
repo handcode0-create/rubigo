@@ -142,4 +142,25 @@ export const authService = {
       addresses: fallbackAddresses,
     }
   },
+
+  // Mise à jour du profil par son propriétaire (autorisée par la policy RLS
+  // "profiles self update" déjà présente dans le schéma — ne touche jamais au rôle).
+  async updateProfile(
+    userId: string,
+    updates: { name: string; phone: string },
+  ): Promise<ProfileRow | null> {
+    const { data, error } = await supabase
+      .from('profiles')
+      .update({
+        name: updates.name,
+        phone: updates.phone,
+        initials: computeInitials(updates.name),
+      })
+      .eq('id', userId)
+      .select('id, role, name, phone, city, initials, is_active')
+      .maybeSingle()
+
+    if (error || !data) return null
+    return data as ProfileRow
+  },
 }

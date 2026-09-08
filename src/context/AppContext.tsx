@@ -95,6 +95,7 @@ type AppContextValue = {
     password: string,
   ) => Promise<AuthActionResult>;
   logout: () => Promise<void>;
+  updateProfile: (name: string, phone: string) => Promise<AuthActionResult>;
 };
 
 const AppContext = createContext<AppContextValue | null>(null);
@@ -478,6 +479,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
     // "déconnecté" dès que Supabase confirme la fin de session.
   };
 
+  const updateProfile = async (name: string, phone: string): Promise<AuthActionResult> => {
+    if (!user.id) return { ok: false, message: "Vous devez être connecté." };
+    const updated = await authService.updateProfile(user.id, { name, phone });
+    if (!updated) {
+      return { ok: false, message: "Impossible de mettre à jour votre profil pour le moment." };
+    }
+    setUser((current) => authService.mapProfileToUser(updated, current.email, current.addresses));
+    return { ok: true };
+  };
+
   const activeRole = user.role ?? "customer";
 
   const value = {
@@ -523,6 +534,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     login,
     register,
     logout,
+    updateProfile,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

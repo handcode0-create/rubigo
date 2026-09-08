@@ -1,2 +1,11 @@
 .address-section { margin: 28px 0; }.address-row { display: flex; align-items: center; gap: 10px; padding: 13px 4px; border-bottom: 1px solid var(--rubigo-border); }.address-row > span { color: var(--rubigo-accent); font-size: 20px; }.address-row div { flex: 1; min-width: 0; }.address-row strong, .address-row p { display: block; }.address-row strong { font-size: 12px; }.address-row p { margin: 3px 0 0; color: var(--rubigo-text-muted); font-size: 10px; }.address-row small { padding: 4px 6px; border-radius: 4px; color: var(--rubigo-success); background: var(--rubigo-primary-soft); font-size: 9px; }.address-row button { padding: 5px; color: var(--rubigo-accent); background: transparent; font-size: 10px; }.address-row button:last-child { color: var(--rubigo-danger); font-size: 18px; }.address-form { display: grid; grid-template-columns: 1fr 1.5fr auto; gap: 8px; margin-top: 14px; }.address-form input { min-width: 0; padding: 10px; border: 1px solid var(--rubigo-border); border-radius: 6px; outline: 0; background: var(--rubigo-surface); font-size: 10px; }.address-form button { padding: 10px; border-radius: 6px; color: var(--rubigo-primary); background: var(--rubigo-primary-light); font-size: 10px; font-weight: 700; }
 @media (max-width: 600px) { .address-form { grid-template-columns: 1fr 1fr; }.address-form button { grid-column: 1 / -1; } }
+
+.profile-edit-form { display: grid; flex: 1; min-width: 0; gap: 8px; }
+.profile-edit-form input { padding: 9px 10px; border: 1px solid var(--rubigo-border); border-radius: 6px; outline: 0; background: var(--rubigo-surface); font-size: 12px; }
+.profile-edit-actions { display: flex; gap: 8px; }
+.profile-edit-actions button { padding: 8px 16px; border-radius: 6px; font-size: 11px; font-weight: 700; }
+.profile-edit-actions button:first-child { color: #fff; background: var(--rubigo-primary); }
+.profile-edit-actions button:last-child { color: var(--rubigo-text-muted); background: var(--rubigo-border); }
+.profile-note { margin: 0 0 16px; padding: 10px 12px; border-radius: 8px; color: var(--rubigo-text); background: var(--rubigo-primary-soft); font-size: 12px; }
+.profile-note.error { margin: 0 0 4px; color: var(--rubigo-danger); background: rgba(220, 38, 38, 0.08); font-size: 11px; }
