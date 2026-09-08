@@ -2,6 +2,7 @@ import { merchants, products, services } from '../data'
 import { useApp } from '../context/AppContext'
 import { MerchantCard, OrderCard, ProductCard, ServiceCard } from '../components/Cards'
 import { ArrowRightIcon, CartIcon, MotoIcon, SearchIcon, ShieldCheckIcon, SparklesIcon, StoreIcon } from '../components/Icons'
+import { HeroDishIllustration } from '../components/HeroDishIllustration'
 import type { Merchant, Page, Product } from '../types'
 import { formatCurrency } from '../utils/formatCurrency'
 
@@ -44,6 +45,11 @@ export function Home({
       </div>
 
       <section className="hero-banner">
+        <div className="hero-image-layer" aria-hidden="true">
+          <HeroDishIllustration />
+        </div>
+        <div className="hero-overlay" aria-hidden="true" />
+
         <div className="hero-copy">
           <div className="hero-badge">
             <span className="hero-badge-dot" />
