@@ -1,0 +1,218 @@
+/* ==========================================================================
+   RUBIGO DESIGN SYSTEM v1.0 — ATOMIC UI COMPONENTS
+   Vert RUBIGO (#16A34A) = Couleur Maîtresse & Identitaire
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   BUTTONS
+   -------------------------------------------------------------------------- */
+
+.rubigo-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-weight: 600;
+  border-radius: var(--rubigo-radius, 12px);
+  border: 0;
+  cursor: pointer;
+  text-decoration: none;
+  line-height: 1.25;
+  transition: background 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
+  white-space: nowrap;
+}
+
+/* Tailles */
+.rubigo-btn-sm {
+  padding: 8px 14px;
+  font-size: 13px;
+  border-radius: var(--rubigo-radius-sm, 8px);
+}
+
+.rubigo-btn-md {
+  padding: 12px 20px;
+  font-size: 15px;
+}
+
+.rubigo-btn-lg {
+  padding: 15px 24px;
+  font-size: 16px;
+  border-radius: var(--rubigo-radius-lg, 16px);
+}
+
+.rubigo-btn-full {
+  width: 100%;
+}
+
+/* Variantes */
+/* 1. Primaire : VERT RUBIGO (#16A34A) */
+.rubigo-btn-primary {
+  background: var(--rubigo-primary, #16a34a);
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(22, 163, 74, 0.2);
+}
+
+.rubigo-btn-primary:hover:not(:disabled) {
+  background: #15803d;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(22, 163, 74, 0.28);
+}
+
+.rubigo-btn-primary:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+/* 2. Secondaire : Fond blanc, bordure et texte VERT RUBIGO */
+.rubigo-btn-secondary {
+  background: #ffffff;
+  color: var(--rubigo-primary, #16a34a);
+  border: 1.5px solid var(--rubigo-primary, #16a34a);
+}
+
+.rubigo-btn-secondary:hover:not(:disabled) {
+  background: var(--rubigo-primary-light, #dcfce7);
+}
+
+/* 3. Accent : Orange contextuel (#F97316) - Utilisé avec parcimonie */
+.rubigo-btn-accent {
+  background: var(--rubigo-accent, #f97316);
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(249, 115, 22, 0.2);
+}
+
+.rubigo-btn-accent:hover:not(:disabled) {
+  background: #ea580c;
+  transform: translateY(-1px);
+}
+
+/* 4. Ghost */
+.rubigo-btn-ghost {
+  background: transparent;
+  color: var(--rubigo-text, #111827);
+}
+
+.rubigo-btn-ghost:hover:not(:disabled) {
+  background: #f3f4f6;
+  color: var(--rubigo-primary, #16a34a);
+}
+
+/* État désactivé */
+.rubigo-btn:disabled {
+  background: #e5e7eb !important;
+  color: #9ca3af !important;
+  border-color: #e5e7eb !important;
+  cursor: not-allowed !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+.rubigo-btn-icon,
+.rubigo-btn-icon-right {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* --------------------------------------------------------------------------
+   BADGES & TAGS
+   -------------------------------------------------------------------------- */
+
+.rubigo-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: var(--rubigo-radius-sm, 8px);
+  line-height: 1.2;
+}
+
+.rubigo-badge-icon {
+  display: flex;
+  align-items: center;
+}
+
+/* Ouvert : Vert doux et vert vif */
+.rubigo-badge-open {
+  background: var(--rubigo-primary-light, #dcfce7);
+  color: var(--rubigo-primary, #16a34a);
+}
+
+/* Fermé : Rouge doux */
+.rubigo-badge-closed {
+  background: #fee2e2;
+  color: var(--rubigo-error, #ef4444);
+}
+
+/* Promo : Ambre doux */
+.rubigo-badge-promo {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+/* Nouveau : Bleu doux */
+.rubigo-badge-new {
+  background: var(--rubigo-info-light, #dbeafe);
+  color: var(--rubigo-info, #2563eb);
+}
+
+/* Neutre / Catégorie */
+.rubigo-badge-neutral {
+  background: #f3f4f6;
+  color: var(--rubigo-text-muted, #6b7280);
+}
+
+/* Accent contextuel */
+.rubigo-badge-accent {
+  background: #ffedd5;
+  color: #c2410c;
+}
+
+/* --------------------------------------------------------------------------
+   RATING BADGE
+   -------------------------------------------------------------------------- */
+
+.rubigo-rating-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  color: #d97706;
+}
+
+.rubigo-rating-badge strong {
+  color: var(--rubigo-text, #111827);
+  font-weight: 700;
+}
+
+.rubigo-rating-badge small {
+  color: var(--rubigo-text-muted, #6b7280);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+/* --------------------------------------------------------------------------
+   CARD CONTAINER
+   -------------------------------------------------------------------------- */
+
+.rubigo-card {
+  background: var(--rubigo-surface, #ffffff);
+  border: 1px solid var(--rubigo-border, #e5e7eb);
+  border-radius: var(--rubigo-radius, 12px);
+  box-shadow: var(--rubigo-shadow-sm);
+  overflow: hidden;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.rubigo-card-interactive {
+  cursor: pointer;
+}
+
+.rubigo-card-interactive:hover {
+  transform: translateY(-2px);
+  border-color: rgba(22, 163, 74, 0.35);
+  box-shadow: var(--rubigo-shadow);
+}

@@ -1,0 +1,91 @@
+.notifications-panel {
+  position: fixed;
+  z-index: 20;
+  top: 76px;
+  right: 28px;
+  width: min(360px, calc(100vw - 40px));
+  max-height: calc(100vh - 100px);
+  overflow: auto;
+  padding: 18px;
+  border: 1px solid var(--rubigo-border);
+  border-radius: 12px;
+  background: var(--rubigo-surface);
+  box-shadow: 0 20px 50px rgba(23, 63, 50, 0.16);
+}
+.notifications-head {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+}
+.notifications-head h2 {
+  margin: 0;
+  font: 600 20px "Space Grotesk";
+}
+.notifications-head > button {
+  color: var(--rubigo-text-muted);
+  background: transparent;
+  font-size: 24px;
+}
+.mark-all {
+  margin: 15px 0 8px;
+  color: var(--rubigo-accent);
+  background: transparent;
+  font-size: 10px;
+  font-weight: 700;
+}
+.notification-list {
+  display: grid;
+  gap: 4px;
+}
+.notification-row {
+  display: flex;
+  align-items: start;
+  gap: 10px;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--rubigo-border);
+  color: var(--rubigo-text);
+  background: transparent;
+  text-align: left;
+}
+.notification-row.read {
+  opacity: 0.55;
+}
+.notification-icon {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  color: var(--rubigo-accent);
+  background: var(--rubigo-primary-light);
+}
+.notification-row strong,
+.notification-row small {
+  display: block;
+}
+.notification-row strong {
+  font-size: 11px;
+}
+.notification-row small {
+  margin-top: 4px;
+  color: var(--rubigo-text-muted);
+  font-size: 9px;
+}
+.icon-button.notification span {
+  top: -3px;
+  right: -5px;
+  width: auto;
+  min-width: 14px;
+  height: 14px;
+  padding: 1px 3px;
+  color: #fff;
+  background: var(--rubigo-accent);
+  font: 8px "DM Mono";
+  text-align: center;
+}
+@media (max-width: 600px) {
+  .notifications-panel {
+    top: 70px;
+    right: 20px;
+  }
+}

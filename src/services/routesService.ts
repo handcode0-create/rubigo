@@ -1,0 +1,4 @@
+import type { Location } from '../types'
+
+export type RouteEstimate = { distanceMeters: number; durationSeconds: number; polyline?: string }
+export async function calculateRoute(origin: Location, destination: Location): Promise<RouteEstimate | null> { if (!window.google?.maps) return null; return new Promise((resolve) => { const service = new window.google.maps.DirectionsService(); service.route({ origin: { lat: origin.latitude, lng: origin.longitude }, destination: { lat: destination.latitude, lng: destination.longitude }, travelMode: window.google.maps.TravelMode.DRIVING }, (result, status) => { const leg = result?.routes?.[0]?.legs?.[0]; resolve(status === 'OK' && leg ? { distanceMeters: leg.distance?.value ?? 0, durationSeconds: leg.duration?.value ?? 0, polyline: result?.routes?.[0]?.overview_polyline } : null) }) }) }

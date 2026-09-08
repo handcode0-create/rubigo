@@ -1,0 +1,2 @@
+export function formatDate(value: string | Date) { return new Intl.DateTimeFormat('fr-FR', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value)) }
+export function formatOrderStatus(status: string) { const labels: Record<string, string> = { pending: 'En attente', accepted: 'Acceptée', preparing: 'En préparation', ready: 'Prête', driver_assigned: 'Livreur assigné', picked_up: 'Récupérée', delivering: 'En livraison', delivered: 'Livrée', cancelled: 'Annulée', merchant_rejected: 'Refusée' }; return labels[status] ?? status }

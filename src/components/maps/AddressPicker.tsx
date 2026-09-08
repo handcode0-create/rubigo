@@ -1,0 +1,4 @@
+import type { Address } from '../../types'
+import './AddressPicker.css'
+
+export function AddressPicker({ addresses, selectedId, onSelect }: { addresses: Address[]; selectedId?: string; onSelect: (address: Address) => void }) { return <section className="address-picker"><div className="address-picker-head"><div><p className="eyebrow">ADRESSE DE LIVRAISON</p><h2>Où livrer votre commande ?</h2></div><span>⌖</span></div>{addresses.length ? <div className="saved-addresses">{addresses.map((address) => <button key={address.id} className={selectedId === address.id ? 'saved-address active' : 'saved-address'} onClick={() => onSelect(address)}><span>{selectedId === address.id ? '●' : '○'}</span><span><strong>{address.label}</strong><small>{address.line}</small></span>{address.location ? <em>GPS</em> : null}</button>)}</div> : <p className="address-empty">Aucune adresse enregistrée. Ajoutez-en une depuis votre profil.</p>}</section> }
