@@ -346,6 +346,7 @@
 }
 
 .order-mini-product {
+  flex-shrink: 0;
   min-width: 0;
   display: flex;
   align-items: center;
@@ -357,20 +358,22 @@
 }
 
 .order-mini-product .product-thumbnail {
+  flex-shrink: 0;
   width: 42px;
   height: 42px;
   border-radius: 11px;
 }
 
 .order-mini-product > div {
-  min-width: 82px;
+  min-width: 0;
+  max-width: 82px;
   display: grid;
   gap: 2px;
 }
 
 .order-mini-product strong {
   display: block;
-  max-width: 110px;
+  max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -380,10 +383,13 @@
 .order-mini-product span {
   color: var(--orders-muted);
   font-size: 10px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .order-more-items {
-  flex: 0 0 auto;
+  flex: 0 0 42px;
   display: grid;
   place-items: center;
   width: 42px;
