@@ -1,0 +1,25 @@
+{
+  "name": "RUBIGO",
+  "short_name": "RUBIGO",
+  "description": "Tout Adzopé, plus proche de vous",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#F7F9F6",
+  "theme_color": "#16A34A",
+  "lang": "fr",
+  "icons": [
+    {
+      "src": "/logo.png",
+      "sizes": "1254x1254",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/logo.png",
+      "sizes": "1254x1254",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
