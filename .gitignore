@@ -41,3 +41,11 @@ Thumbs.db
 
 *.log
 npm-debug.log*
+
+# Secrets / fichiers sensibles — ne jamais committer
+MDPSUPABASE.TXT
+*SUPABASE*.TXT
+*SUPABASE*.txt
+
+# Sauvegardes locales de data.ts — ne pas versionner
+src/data.ts.backup_*
