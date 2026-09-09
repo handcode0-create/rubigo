@@ -24,6 +24,15 @@ const serviceIconMap = {
   SH: ShoppingBag,
 } as const
 
+// Nommage exact demandé pour l'affichage (n'écrit jamais dans les données —
+// service.label reste inchangé dans data.ts, ceci ne concerne que le rendu).
+const SERVICE_DISPLAY_LABEL: Record<string, string> = {
+  food: 'Food',
+  market: 'Marché',
+  express: 'Express',
+  shopper: 'Shopper',
+}
+
 export function ServiceCard({
   service,
   onSelect,
@@ -32,24 +41,20 @@ export function ServiceCard({
   onSelect: () => void
 }) {
   const Icon = serviceIconMap[service.icon as keyof typeof serviceIconMap]
+  const label = SERVICE_DISPLAY_LABEL[service.id] ?? service.label
 
   return (
     <button
       className={`service-card ${service.accent}`}
       onClick={onSelect}
       type="button"
+      aria-label={label}
     >
       <span className="service-icon" aria-hidden="true">
-        {Icon ? <Icon size={21} strokeWidth={2} /> : null}
+        {Icon ? <Icon size={22} strokeWidth={2} /> : null}
       </span>
 
-      <span className="service-label">{service.label}</span>
-
-      <span className="service-description">{service.description}</span>
-
-      <span className="service-arrow" aria-hidden="true">
-        <ArrowRightIcon size={14} />
-      </span>
+      <span className="service-label">{label}</span>
     </button>
   )
 }

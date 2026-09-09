@@ -946,42 +946,46 @@ button:disabled {
   color: #15803d;
 }
 
-/* Grille de services */
+/* Services RUBIGO — rangée compacte icône + nom */
 .service-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 14px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
 }
 
 .service-card {
-  position: relative;
-  min-height: 140px;
-  padding: 18px;
-  border: 1px solid var(--rubigo-border);
-  border-radius: var(--rubigo-radius);
-  background: var(--rubigo-surface);
-  text-align: left;
-  box-shadow: var(--rubigo-shadow-sm);
-  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1 1 0;
+  min-width: 0;
+  gap: 8px;
+  padding: 4px 2px;
+  background: transparent;
+  border: none;
+  text-align: center;
+  transition: transform 0.15s ease;
 }
 
 .service-card:hover {
   transform: translateY(-2px);
-  border-color: var(--rubigo-primary);
-  box-shadow: var(--rubigo-shadow);
 }
 
-.service-icon,
+.service-icon {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+}
+
 .product-thumb {
   display: grid;
   place-items: center;
-  width: 42px;
-  height: 42px;
-  margin-bottom: 16px;
-  border-radius: 10px;
   font-family: "DM Mono", monospace;
   font-weight: 700;
-  font-size: 11px;
 }
 
 .coral .service-icon {
@@ -990,8 +994,8 @@ button:disabled {
 }
 
 .lime .service-icon {
-  color: #15803d;
-  background: #dcfce7;
+  color: #4d6a10;
+  background: var(--rubigo-lime);
 }
 
 .blue .service-icon {
@@ -1006,23 +1010,24 @@ button:disabled {
 
 .service-label {
   display: block;
-  font-size: 16px;
+  max-width: 100%;
+  overflow: hidden;
+  font-size: 12px;
   font-weight: 700;
   color: var(--rubigo-text);
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
-.service-description {
-  display: block;
-  margin-top: 3px;
-  color: var(--rubigo-text-muted);
-  font-size: 12px;
-}
+@media (max-width: 380px) {
+  .service-icon {
+    width: 46px;
+    height: 46px;
+  }
 
-.service-arrow {
-  position: absolute;
-  top: 18px;
-  right: 16px;
-  color: var(--rubigo-text-muted);
+  .service-label {
+    font-size: 11px;
+  }
 }
 
 /* ==========================================================================
@@ -1656,13 +1661,11 @@ footer {
   }
 
   .service-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 10px;
+    gap: 6px;
   }
 
   .service-card {
-    min-height: 120px;
-    padding: 14px;
+    gap: 6px;
   }
 
   .merchant-grid {
@@ -1740,8 +1743,5 @@ footer {
     padding-right: 24px;
     padding-left: 24px;
   }
-
-  .service-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
 }
+
