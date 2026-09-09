@@ -55,6 +55,7 @@ export function ServiceCard({
       </span>
 
       <span className="service-label">{label}</span>
+      <span className="service-description">{service.description}</span>
     </button>
   )
 }

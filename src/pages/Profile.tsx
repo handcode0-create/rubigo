@@ -1,23 +1,95 @@
-import { useState } from 'react'
+import { useState, type ComponentType } from 'react'
+import {
+  ChevronRight,
+  CreditCard,
+  Gift,
+  Heart,
+  HelpCircle,
+  ListOrdered,
+  MapPin,
+  Pencil,
+  Settings2,
+  User as UserIcon,
+} from 'lucide-react'
 import { useApp } from '../context/AppContext'
 import { useGeocoding } from '../hooks/useGeocoding'
 import type { Page } from '../types'
 import './Profile.css'
 
 type LinkTarget = Page | 'edit' | 'soon'
+type Accent = 'coral' | 'lime' | 'blue' | 'gold'
 
-const links: Array<[string, string, LinkTarget]> = [
-  ['Mes informations', '◯', 'edit'],
-  ['Mes commandes', '◷', 'orders'],
-  ['Mes favoris', '♡', 'favorites'],
-  ['Moyens de paiement', '▣', 'soon'],
-  ['Parrainage', '✦', 'soon'],
-  ['Aide & Support', '?', 'soon'],
-  ['Paramètres', '⚙', 'soon'],
+type ProfileAction = {
+  label: string
+  description: string
+  icon: ComponentType<{ size?: number; strokeWidth?: number }>
+  accent: Accent
+  target: LinkTarget
+}
+
+const actions: ProfileAction[] = [
+  {
+    label: 'Mes informations',
+    description: 'Modifier votre nom et téléphone',
+    icon: UserIcon,
+    accent: 'blue',
+    target: 'edit',
+  },
+  {
+    label: 'Mes commandes',
+    description: 'Suivre vos commandes en cours et passées',
+    icon: ListOrdered,
+    accent: 'coral',
+    target: 'orders',
+  },
+  {
+    label: 'Mes favoris',
+    description: 'Retrouvez vos commerces favoris',
+    icon: Heart,
+    accent: 'gold',
+    target: 'favorites',
+  },
+  {
+    label: 'Moyens de paiement',
+    description: 'Gérer vos moyens de paiement',
+    icon: CreditCard,
+    accent: 'lime',
+    target: 'soon',
+  },
+  {
+    label: 'Parrainage',
+    description: 'Invitez vos proches et gagnez des avantages',
+    icon: Gift,
+    accent: 'coral',
+    target: 'soon',
+  },
+  {
+    label: 'Aide & Support',
+    description: 'Contactez notre équipe',
+    icon: HelpCircle,
+    accent: 'blue',
+    target: 'soon',
+  },
+  {
+    label: 'Paramètres',
+    description: 'Préférences de votre compte',
+    icon: Settings2,
+    accent: 'gold',
+    target: 'soon',
+  },
 ]
 
 export function Profile({ onNavigate }: { onNavigate: (page: Page) => void }) {
-  const { user, addAddress, removeAddress, setDefaultAddress, logout, updateProfile } = useApp()
+  const {
+    user,
+    orders,
+    favoriteMerchantIds,
+    addAddress,
+    removeAddress,
+    setDefaultAddress,
+    logout,
+    updateProfile,
+  } = useApp()
   const { geocode, isLoading: geocoding } = useGeocoding()
 
   const [addressLabel, setAddressLabel] = useState('')
@@ -80,24 +152,38 @@ export function Profile({ onNavigate }: { onNavigate: (page: Page) => void }) {
     setEditing(false)
   }
 
-  const handleLinkClick = (target: LinkTarget) => {
+  const handleActionClick = (target: LinkTarget, label: string) => {
     if (target === 'edit') {
       startEditing()
       return
     }
-    if (target === 'soon') return
+    if (target === 'soon') {
+      setComingSoon(label)
+      return
+    }
     onNavigate(target)
   }
 
+  const contactLine = [user.email, user.phone].filter(Boolean).join(' · ')
+
   return (
     <div className="page-content">
-      <section className="page-heading">
-        <p className="eyebrow">VOTRE ESPACE</p>
-        <h1>Profil</h1>
-        <p>Gérez vos informations et préférences.</p>
-      </section>
+      <div className="profile-header-row">
+        <div>
+          <p className="eyebrow">VOTRE ESPACE</p>
+          <h1>Mon profil</h1>
+        </div>
+        <button
+          type="button"
+          className="profile-edit-trigger"
+          aria-label="Modifier le profil"
+          onClick={startEditing}
+        >
+          <Pencil size={16} />
+        </button>
+      </div>
 
-      <div className="profile-card">
+      <div className="profile-identity">
         <span className="profile-avatar">{user.initials}</span>
 
         {editing ? (
@@ -126,17 +212,31 @@ export function Profile({ onNavigate }: { onNavigate: (page: Page) => void }) {
           </div>
         ) : (
           <>
-            <div>
-              <h2>{user.name}</h2>
-              <p>{user.phone}</p>
-              <span>{user.city}</span>
-            </div>
-            <button aria-label="Modifier le profil" onClick={startEditing}>
-              ✎
-            </button>
+            <h2>{user.name}</h2>
+            {contactLine && <p className="profile-contact">{contactLine}</p>}
+            {user.city && (
+              <span className="profile-location-badge">
+                <MapPin size={12} />
+                {user.city}
+              </span>
+            )}
           </>
         )}
       </div>
+
+      {!editing && (
+        <div className="profile-summary-card">
+          <div className="profile-summary-stat">
+            <strong>{orders.length}</strong>
+            <span>Commande{orders.length > 1 ? 's' : ''}</span>
+          </div>
+          <div className="profile-summary-divider" />
+          <div className="profile-summary-stat">
+            <strong>{favoriteMerchantIds.length}</strong>
+            <span>Favori{favoriteMerchantIds.length > 1 ? 's' : ''}</span>
+          </div>
+        </div>
+      )}
 
       <section className="address-section">
         <div className="section-heading">
@@ -183,15 +283,22 @@ export function Profile({ onNavigate }: { onNavigate: (page: Page) => void }) {
 
       {comingSoon && <p className="profile-note">{comingSoon} arrive bientôt.</p>}
 
-      <div className="profile-links">
-        {links.map(([label, icon, target]) => (
+      <div className="profile-actions">
+        {actions.map((action) => (
           <button
-            key={label}
-            onClick={() => (target === 'soon' ? setComingSoon(label) : handleLinkClick(target))}
+            key={action.label}
+            type="button"
+            className={`profile-action-card ${action.accent}`}
+            onClick={() => handleActionClick(action.target, action.label)}
           >
-            <span>{icon}</span>
-            {label}
-            <b>→</b>
+            <span className="action-icon">
+              <action.icon size={19} strokeWidth={2} />
+            </span>
+            <span className="action-copy">
+              <strong>{action.label}</strong>
+              <small>{action.description}</small>
+            </span>
+            <ChevronRight size={18} className="action-chevron" />
           </button>
         ))}
       </div>
