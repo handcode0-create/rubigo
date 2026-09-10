@@ -30,7 +30,18 @@ export function parseHash(hash: string): RouteState {
     return { page: 'orders', checkout: true }
   }
 
-  const validPages: readonly string[] = ['home', 'explore', 'orders', 'favorites', 'profile', 'merchant', 'driver', 'admin']
+  const validPages: readonly string[] = [
+    'home',
+    'explore',
+    'orders',
+    'favorites',
+    'profile',
+    'merchant',
+    'driver',
+    'driver-missions',
+    'driver-history',
+    'admin',
+  ]
   if (validPages.includes(root)) {
     return { page: root as Page }
   }

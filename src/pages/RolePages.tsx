@@ -1,8 +1,10 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { OrderCard } from '../components/Cards'
 import { useApp } from '../context/AppContext'
-import { calculateDriverEarnings } from '../utils/pricingUtils'
+import { useUserLocation } from '../hooks/useUserLocation'
+import { calculateDistanceMeters, calculateDriverEarnings } from '../utils/pricingUtils'
 import { formatCurrency } from '../utils/formatCurrency'
+import { merchants } from '../data'
 import type { OrderStatus } from '../types'
 import './RolePages.css'
 
@@ -142,9 +144,14 @@ export function DriverHome({ onReturnToCustomer }: { onReturnToCustomer: () => v
   )
 }
 
+type MissionSort = 'distance' | 'earnings' | 'recent'
+
 export function DriverMissions({ onReturnToCustomer }: { onReturnToCustomer: () => void }) {
   const { user, driverOrders, availableMissions, missionsLoading, acceptMission } = useApp()
   const [acceptingId, setAcceptingId] = useState<string | null>(null)
+  const [sortBy, setSortBy] = useState<MissionSort>('distance')
+  const [merchantFilter, setMerchantFilter] = useState<string>('all')
+  const { location: driverLocation, status: locationStatus, locate } = useUserLocation()
 
   const busy = driverOrders.some((order) =>
     ['driver_assigned', 'picked_up', 'delivering'].includes(order.status),
@@ -155,6 +162,42 @@ export function DriverMissions({ onReturnToCustomer }: { onReturnToCustomer: () 
     await acceptMission(orderId)
     setAcceptingId(null)
   }
+
+  // Distance réelle uniquement si la position du livreur a pu être obtenue
+  // (Geolocation API du navigateur) — sinon on n'invente aucune distance.
+  const missionsWithDistance = useMemo(
+    () =>
+      availableMissions.map((order) => {
+        const merchant = merchants.find((entry) => entry.id === order.merchantId)
+        const distanceMeters = driverLocation
+          ? calculateDistanceMeters(driverLocation, merchant?.location)
+          : undefined
+        return { order, merchant, distanceMeters }
+      }),
+    [availableMissions, driverLocation],
+  )
+
+  const merchantOptions = useMemo(
+    () =>
+      [...new Map(missionsWithDistance.map((item) => [item.order.merchantId, item.order.merchantName])).entries()],
+    [missionsWithDistance],
+  )
+
+  const visibleMissions = missionsWithDistance
+    .filter((item) => merchantFilter === 'all' || item.order.merchantId === merchantFilter)
+    .sort((a, b) => {
+      if (sortBy === 'earnings') {
+        return calculateDriverEarnings(b.order.deliveryFee ?? 0) - calculateDriverEarnings(a.order.deliveryFee ?? 0)
+      }
+      if (sortBy === 'recent') {
+        return new Date(b.order.createdAt ?? 0).getTime() - new Date(a.order.createdAt ?? 0).getTime()
+      }
+      // distance : les missions sans distance connue passent en dernier,
+      // jamais mélangées au hasard avec de vraies valeurs
+      if (a.distanceMeters === undefined) return 1
+      if (b.distanceMeters === undefined) return -1
+      return a.distanceMeters - b.distanceMeters
+    })
 
   if (!useDriverGuard(user)) {
     return (
@@ -174,6 +217,42 @@ export function DriverMissions({ onReturnToCustomer }: { onReturnToCustomer: () 
         <p>Commandes prêtes, pas encore prises par un livreur.</p>
       </section>
 
+      {locationStatus !== 'success' ? (
+        <div className="mission-location-note">
+          {locationStatus === 'loading' ? (
+            <span>Localisation en cours…</span>
+          ) : (
+            <>
+              <span>
+                {locationStatus === 'denied'
+                  ? "Position non partagée : le tri par distance n'est pas disponible."
+                  : "Position indisponible : le tri par distance n'est pas disponible."}
+              </span>
+              <button type="button" onClick={locate}>
+                Réessayer
+              </button>
+            </>
+          )}
+        </div>
+      ) : null}
+
+      <div className="mission-filters">
+        <select value={sortBy} onChange={(event) => setSortBy(event.target.value as MissionSort)}>
+          <option value="distance">Trier : plus proche</option>
+          <option value="earnings">Trier : meilleure rémunération</option>
+          <option value="recent">Trier : plus récent</option>
+        </select>
+
+        <select value={merchantFilter} onChange={(event) => setMerchantFilter(event.target.value)}>
+          <option value="all">Tous les commerces</option>
+          {merchantOptions.map(([id, name]) => (
+            <option key={id} value={id}>
+              {name}
+            </option>
+          ))}
+        </select>
+      </div>
+
       {missionsLoading ? (
         <div className="empty-state">
           <span>⌖</span>
@@ -185,16 +264,22 @@ export function DriverMissions({ onReturnToCustomer }: { onReturnToCustomer: () 
           <strong>Une course est déjà en cours</strong>
           <p>Terminez-la (onglet Accueil) avant d'en accepter une nouvelle.</p>
         </div>
-      ) : availableMissions.length ? (
+      ) : visibleMissions.length ? (
         <div className="order-list">
-          {availableMissions.map((order) => (
+          {visibleMissions.map(({ order, distanceMeters }) => (
             <div className="workflow-card" key={order.id}>
               <OrderCard order={order} onOpen={() => undefined} />
+              <div className="mission-meta">
+                {distanceMeters !== undefined ? (
+                  <span>{(distanceMeters / 1000).toFixed(1).replace('.', ',')} km</span>
+                ) : (
+                  <span className="muted">Distance indisponible</span>
+                )}
+                <span>{formatCurrency(calculateDriverEarnings(order.deliveryFee ?? 0))}</span>
+              </div>
               <div className="workflow-actions">
                 <button onClick={() => handleAccept(order.id)} disabled={acceptingId === order.id}>
-                  {acceptingId === order.id
-                    ? 'Acceptation…'
-                    : `Accepter · ${formatCurrency(calculateDriverEarnings(order.deliveryFee ?? 0))}`}
+                  {acceptingId === order.id ? 'Acceptation…' : 'Accepter cette course'}
                 </button>
               </div>
             </div>
