@@ -10,5 +10,178 @@ const merchantId = 'merchant-002'
 
 export function MerchantDashboard({ onReturnToCustomer }: { onReturnToCustomer: () => void }) { const { activeRole, orders, updateOrderStatus } = useApp(); const merchantOrders = orders.filter((order) => order.merchantId === merchantId); const pending = merchantOrders.filter((order) => order.status === 'pending'); const revenue = merchantOrders.filter((order) => order.status === 'delivered').reduce((total, order) => total + (order.subtotal ?? order.total), 0); const action = (orderId: string, status: OrderStatus) => updateOrderStatus(orderId, status); return <div className="page-content role-page"><section className="page-heading"><p className="eyebrow">ESPACE COMMERÇANT · MODE DÉMO</p><h1>Bonjour, Le Patio 👋</h1><p>Gérez vos commandes en quelques gestes.</p></section><div className="role-switch"><strong>Compte actif : {activeRole}</strong><button onClick={onReturnToCustomer}>Revenir au client</button></div><div className="stats-grid"><div><span>Commandes aujourd’hui</span><strong>{merchantOrders.length}</strong></div><div><span>En attente</span><strong>{pending.length}</strong></div><div><span>Chiffre d’affaires</span><strong>{formatCurrency(revenue)}</strong></div></div><section className="section-block"><div className="section-heading"><div><p className="eyebrow">COMMANDES</p><h2>À traiter maintenant</h2></div></div><div className="order-list">{merchantOrders.length ? merchantOrders.map((order) => <div key={order.id} className="workflow-card"><OrderCard order={order} onOpen={() => undefined} /><div className="workflow-actions">{order.status === 'pending' ? <><button onClick={() => action(order.id, 'accepted')}>Accepter</button><button className="danger-action" onClick={() => action(order.id, 'merchant_rejected')}>Refuser</button></> : null}{order.status === 'accepted' ? <button onClick={() => action(order.id, 'preparing')}>Commencer préparation</button> : null}{order.status === 'preparing' ? <button onClick={() => action(order.id, 'ready')}>Commande prête</button> : null}</div></div>) : <div className="empty-state"><span>✓</span><strong>Aucune commande</strong><p>Les nouvelles commandes apparaîtront ici.</p></div>}</div></section></div> }
 
-export function DriverDashboard({ onReturnToCustomer }: { onReturnToCustomer: () => void }) { const { orders, updateOrderStatus, confirmDelivery } = useApp(); const [online, setOnline] = useState(false); const [pin, setPin] = useState(''); const [pinError, setPinError] = useState(''); const available = orders.filter((order) => order.status === 'ready'); const assigned = orders.find((order) => order.status === 'driver_assigned'); const active = orders.find((order) => ['picked_up', 'delivering'].includes(order.status)); const handleConfirm = () => { if (!active || !confirmDelivery(active.id, pin)) { setPinError('Le code PIN est invalide.'); return } setPinError('') }; return <div className="page-content role-page"><section className="page-heading"><p className="eyebrow">ESPACE LIVREUR · MODE DÉMO</p><h1>Bonjour Koffi 👋</h1><p>Les étapes de votre tournée, au même endroit.</p></section><div className="role-switch"><strong>{online ? '● En ligne' : '○ Hors ligne'}</strong><button onClick={() => setOnline(!online)}>{online ? 'Passer hors ligne' : 'Se mettre en ligne'}</button><button onClick={onReturnToCustomer}>Revenir au client</button></div>{assigned ? <section className="delivery-panel"><p className="eyebrow">COURSE ASSIGNÉE</p><h2>{assigned.merchantName}</h2><p>{assigned.deliveryAddress ?? 'Quartier Commerce, Adzopé'}</p><button className="primary-button" onClick={() => updateOrderStatus(assigned.id, 'picked_up')}>Commande récupérée</button></section> : null}{active ? <section className="delivery-panel"><p className="eyebrow">LIVRAISON EN COURS</p><h2>{active.merchantName}</h2><p>{active.deliveryAddress ?? 'Quartier Commerce, Adzopé'}</p>{active.status === 'picked_up' ? <button className="primary-button" onClick={() => updateOrderStatus(active.id, 'delivering')}>Commencer livraison</button> : <><label>Code PIN client<input value={pin} onChange={(event) => { setPin(event.target.value); setPinError('') }} placeholder="4 chiffres" inputMode="numeric" /></label>{pinError ? <p className="checkout-error" role="alert">{pinError}</p> : null}<button className="primary-button" onClick={handleConfirm}>Confirmer livraison</button></>}</section> : null}<section className="section-block"><div className="section-heading"><div><p className="eyebrow">COURSES DISPONIBLES</p><h2>{online ? 'À accepter' : 'Passez en ligne pour recevoir des courses'}</h2></div></div>{online && available.length ? <div className="order-list">{available.map((order) => <div className="workflow-card" key={order.id}><OrderCard order={order} onOpen={() => undefined} /><div className="workflow-actions"><button onClick={() => updateOrderStatus(order.id, 'driver_assigned')}>Accepter · {formatCurrency(calculateDriverEarnings(order.deliveryFee ?? 0))}</button></div></div>)}</div> : <div className="empty-state"><span>⌖</span><strong>{online ? 'Aucune course disponible' : 'Vous êtes hors ligne'}</strong><p>Le statut du livreur contrôle les courses proposées.</p></div>}</section></div> }
+export function DriverDashboard({ onReturnToCustomer }: { onReturnToCustomer: () => void }) {
+  const {
+    user,
+    driverOrders,
+    driverOrdersLoading,
+    availableMissions,
+    missionsLoading,
+    acceptMission,
+    advanceDriverOrderStatus,
+    confirmDelivery,
+  } = useApp()
+
+  const [pin, setPin] = useState('')
+  const [pinError, setPinError] = useState('')
+  const [confirming, setConfirming] = useState(false)
+  const [acceptingId, setAcceptingId] = useState<string | null>(null)
+
+  const assigned = driverOrders.find((order) => order.status === 'driver_assigned')
+  const active = driverOrders.find((order) => ['picked_up', 'delivering'].includes(order.status))
+
+  const handleAccept = async (orderId: string) => {
+    setAcceptingId(orderId)
+    await acceptMission(orderId)
+    setAcceptingId(null)
+  }
+
+  const handleConfirm = async () => {
+    if (!active) return
+    setConfirming(true)
+    setPinError('')
+    const result = await confirmDelivery(active.id, pin)
+    setConfirming(false)
+    if (!result.ok) {
+      setPinError(result.message ?? 'Le code PIN est invalide.')
+      return
+    }
+    setPin('')
+  }
+
+  if (user.role !== 'driver') {
+    return (
+      <div className="page-content role-page">
+        <section className="page-heading">
+          <p className="eyebrow">ESPACE LIVREUR</p>
+          <h1>Accès réservé</h1>
+          <p>Ce compte n'a pas le rôle livreur.</p>
+        </section>
+        <div className="role-switch">
+          <button onClick={onReturnToCustomer}>Revenir au client</button>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="page-content role-page">
+      <section className="page-heading">
+        <p className="eyebrow">ESPACE LIVREUR</p>
+        <h1>Bonjour {user.name.split(' ')[0]} 👋</h1>
+        <p>Vos courses réelles, au même endroit.</p>
+      </section>
+
+      <div className="role-switch">
+        <strong>Compte livreur</strong>
+        <button onClick={onReturnToCustomer}>Revenir au client</button>
+      </div>
+
+      {assigned ? (
+        <section className="delivery-panel">
+          <p className="eyebrow">COURSE ASSIGNÉE</p>
+          <h2>{assigned.merchantName}</h2>
+          <p>{assigned.deliveryAddress ?? 'Adresse non renseignée'}</p>
+          <button
+            className="primary-button"
+            onClick={() => advanceDriverOrderStatus(assigned.id, 'picked_up')}
+          >
+            Commande récupérée
+          </button>
+        </section>
+      ) : null}
+
+      {active ? (
+        <section className="delivery-panel">
+          <p className="eyebrow">LIVRAISON EN COURS</p>
+          <h2>{active.merchantName}</h2>
+          <p>{active.deliveryAddress ?? 'Adresse non renseignée'}</p>
+
+          {active.status === 'picked_up' ? (
+            <button
+              className="primary-button"
+              onClick={() => advanceDriverOrderStatus(active.id, 'delivering')}
+            >
+              Commencer la livraison
+            </button>
+          ) : (
+            <>
+              <label>
+                Demandez le code PIN au client
+                <input
+                  value={pin}
+                  onChange={(event) => {
+                    setPin(event.target.value)
+                    setPinError('')
+                  }}
+                  placeholder="4 chiffres"
+                  inputMode="numeric"
+                  maxLength={4}
+                />
+              </label>
+              {pinError ? (
+                <p className="checkout-error" role="alert">
+                  {pinError}
+                </p>
+              ) : null}
+              <button
+                className="primary-button"
+                onClick={handleConfirm}
+                disabled={confirming || pin.length !== 4}
+              >
+                {confirming ? 'Vérification…' : 'Confirmer la livraison'}
+              </button>
+            </>
+          )}
+        </section>
+      ) : null}
+
+      <section className="section-block">
+        <div className="section-heading">
+          <div>
+            <p className="eyebrow">COURSES DISPONIBLES</p>
+            <h2>À accepter</h2>
+          </div>
+        </div>
+
+        {missionsLoading || driverOrdersLoading ? (
+          <div className="empty-state">
+            <span>⌖</span>
+            <strong>Chargement…</strong>
+          </div>
+        ) : assigned || active ? (
+          <div className="empty-state">
+            <span>⌖</span>
+            <strong>Une course est déjà en cours</strong>
+            <p>Terminez-la avant d'en accepter une nouvelle.</p>
+          </div>
+        ) : availableMissions.length ? (
+          <div className="order-list">
+            {availableMissions.map((order) => (
+              <div className="workflow-card" key={order.id}>
+                <OrderCard order={order} onOpen={() => undefined} />
+                <div className="workflow-actions">
+                  <button
+                    onClick={() => handleAccept(order.id)}
+                    disabled={acceptingId === order.id}
+                  >
+                    {acceptingId === order.id
+                      ? 'Acceptation…'
+                      : `Accepter · ${formatCurrency(calculateDriverEarnings(order.deliveryFee ?? 0))}`}
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="empty-state">
+            <span>⌖</span>
+            <strong>Aucune course disponible</strong>
+            <p>De nouvelles courses apparaîtront ici automatiquement.</p>
+          </div>
+        )}
+      </section>
+    </div>
+  )
+}
 

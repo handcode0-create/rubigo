@@ -51,6 +51,10 @@ type AppContextValue = {
   authLoading: boolean;
   orders: Order[];
   ordersLoading: boolean;
+  driverOrders: Order[];
+  driverOrdersLoading: boolean;
+  availableMissions: Order[];
+  missionsLoading: boolean;
   customers: User[];
   categories: Category[];
   favoriteMerchantIds: string[];
@@ -72,7 +76,9 @@ type AppContextValue = {
   clearCart: () => void;
   placeOrder: (address?: Address) => Promise<Order | null>;
   updateOrderStatus: (orderId: string, status: OrderStatus) => boolean;
-  confirmDelivery: (orderId: string, pin: string) => boolean;
+  confirmDelivery: (orderId: string, pin: string) => Promise<{ ok: boolean; message?: string }>;
+  acceptMission: (orderId: string) => Promise<boolean>;
+  advanceDriverOrderStatus: (orderId: string, status: OrderStatus) => Promise<boolean>;
   cancelOrder: (orderId: string) => Promise<boolean>;
   switchRole: (role: Role) => void;
   switchToCustomer: () => void;
@@ -117,6 +123,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [cart, setCart] = useState<OrderItem[]>(() => storage.get("cart", []));
   const [orders, setOrders] = useState<Order[]>([]);
   const [ordersLoading, setOrdersLoading] = useState(true);
+  const [driverOrders, setDriverOrders] = useState<Order[]>([]);
+  const [driverOrdersLoading, setDriverOrdersLoading] = useState(false);
+  const [availableMissions, setAvailableMissions] = useState<Order[]>([]);
+  const [missionsLoading, setMissionsLoading] = useState(false);
   const [customers, setCustomers] = useState<User[]>(() =>
     storage.get("customers", [initialUser]),
   );
@@ -210,6 +220,54 @@ export function AppProvider({ children }: { children: ReactNode }) {
       unsubscribe();
     };
   }, [authenticated, user.id]);
+
+  // Données livreur réelles : chargées uniquement pour un profil dont le
+  // rôle réel (Supabase) est 'driver'. Séparées de `orders` (client) — un
+  // livreur voit les commandes qui lui sont assignées, pas les siennes en
+  // tant que client.
+  useEffect(() => {
+    if (!authenticated || !user.id || user.role !== "driver") {
+      setDriverOrders([]);
+      setAvailableMissions([]);
+      return;
+    }
+
+    let isMounted = true;
+    const driverId = user.id;
+    const merchantNameById = (merchantId: string) =>
+      merchants.find((entry) => entry.id === merchantId)?.name ?? "Commerce RUBIGO";
+
+    const loadDriverOrders = async () => {
+      setDriverOrdersLoading(true);
+      const result = await orderService.fetchOrdersForDriver(driverId, merchantNameById);
+      if (isMounted) setDriverOrders(result);
+      setDriverOrdersLoading(false);
+    };
+
+    const loadMissions = async () => {
+      setMissionsLoading(true);
+      const result = await orderService.fetchAvailableMissions(merchantNameById);
+      if (isMounted) setAvailableMissions(result);
+      setMissionsLoading(false);
+    };
+
+    loadDriverOrders();
+    loadMissions();
+
+    const unsubscribeDriver = orderService.subscribeToDriverOrders(driverId, () => {
+      void loadDriverOrders();
+      void loadMissions();
+    });
+    const unsubscribeMissions = orderService.subscribeToAvailableMissions(() => {
+      void loadMissions();
+    });
+
+    return () => {
+      isMounted = false;
+      unsubscribeDriver();
+      unsubscribeMissions();
+    };
+  }, [authenticated, user.id, user.role]);
 
 
   // (étape ultérieure), on les garde en local par utilisateur pour ne pas les
@@ -377,11 +435,61 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return true;
   };
 
-  const confirmDelivery = (orderId: string, pin: string) => {
-    const order = orders.find((item) => item.id === orderId);
-    if (!order || order.deliveryPin !== pin || order.status !== "delivering")
+  // Remplacé : l'ancienne confirmDelivery comparait le PIN côté frontend et
+  // faisait un simple setOrders local — exactement ce que la nouvelle règle
+  // de sécurité interdit. Toute la vérification se fait maintenant dans la
+  // fonction Supabase confirm_delivery() (SECURITY DEFINER, atomique).
+  const confirmDelivery = async (
+    orderId: string,
+    pin: string,
+  ): Promise<{ ok: boolean; message?: string }> => {
+    const result = await orderService.confirmDeliveryWithPin(orderId, pin);
+    if (!result.ok) {
+      const messages: Record<string, string> = {
+        not_authorized: "Cette commande ne vous est pas assignée.",
+        invalid_status: "Cette commande n'est pas encore prête à être confirmée.",
+        already_confirmed: "Cette commande a déjà été confirmée.",
+        no_pin: "Aucun code n'est associé à cette commande.",
+        too_many_attempts: "Trop de tentatives. Contactez le support RUBIGO.",
+        invalid_pin:
+          result.attempts_left !== undefined
+            ? `Code incorrect (${result.attempts_left} essai${result.attempts_left > 1 ? "s" : ""} restant${result.attempts_left > 1 ? "s" : ""}).`
+            : "Code incorrect.",
+      };
+      return {
+        ok: false,
+        message: messages[result.error ?? ""] ?? "Impossible de confirmer la livraison.",
+      };
+    }
+    notify("Livraison confirmée.", orderId);
+    return { ok: true };
+  };
+
+  // ------------------------------------------------------------------
+  // CÔTÉ LIVREUR — données réelles (distinctes des commandes du client)
+  // ------------------------------------------------------------------
+  const acceptMission = async (orderId: string): Promise<boolean> => {
+    const result = await orderService.acceptMission(orderId);
+    if (!result.ok) {
+      notify("Impossible d'accepter cette course (déjà prise ?).");
       return false;
-    return updateOrderStatus(orderId, "delivered");
+    }
+    notify("Course acceptée.", orderId);
+    return true;
+  };
+
+  const advanceDriverOrderStatus = async (
+    orderId: string,
+    status: OrderStatus,
+  ): Promise<boolean> => {
+    const order = driverOrders.find((item) => item.id === orderId);
+    if (!order || !orderService.canTransition(order.status, status)) return false;
+    const success = await orderService.advanceOrderStatus(orderId, status);
+    if (!success) {
+      notify("Impossible de mettre à jour cette course pour le moment.");
+      return false;
+    }
+    return true;
   };
 
   // Annulation réelle par le client (commande encore chez Supabase, pas de
@@ -548,6 +656,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     authLoading,
     orders,
     ordersLoading,
+    driverOrders,
+    driverOrdersLoading,
+    availableMissions,
+    missionsLoading,
     customers,
     categories,
     favoriteMerchantIds,
@@ -572,6 +684,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     placeOrder,
     updateOrderStatus,
     confirmDelivery,
+    acceptMission,
+    advanceDriverOrderStatus,
     cancelOrder,
     switchRole,
     switchToCustomer,

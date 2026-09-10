@@ -14,8 +14,8 @@ type OrderRow = {
   delivery_fee: number
   discount: number
   total: number
-  delivery_pin: string | null
   delivery_address_text: string | null
+  delivery_confirmed: boolean
   created_at: string
   confirmed_at: string | null
   preparing_at: string | null
@@ -34,8 +34,11 @@ type OrderItemRow = {
   unit_price: number
 }
 
+// Le PIN N'EST JAMAIS inclus dans cette liste de colonnes : il vit dans sa
+// propre table (order_pins), lisible uniquement par le client propriétaire
+// de la commande (voir migration 0006). Le livreur n'y a jamais accès.
 const ORDER_COLUMNS =
-  'id, order_number, customer_id, merchant_id, merchant_local_id, driver_id, status, payment_status, subtotal, delivery_fee, discount, total, delivery_pin, delivery_address_text, created_at, confirmed_at, preparing_at, ready_at, picked_up_at, out_for_delivery_at, delivered_at, estimated_delivery_at'
+  'id, order_number, customer_id, merchant_id, merchant_local_id, driver_id, status, payment_status, subtotal, delivery_fee, discount, total, delivery_address_text, delivery_confirmed, created_at, confirmed_at, preparing_at, ready_at, picked_up_at, out_for_delivery_at, delivered_at, estimated_delivery_at'
 
 function mapTracking(row: OrderRow): OrderTracking {
   return {
@@ -54,6 +57,7 @@ function mapOrder(
   items: OrderItemRow[],
   merchantName: string,
   driver?: { name: string; initials: string },
+  pin?: string,
 ): Order {
   return {
     id: row.id,
@@ -75,16 +79,41 @@ function mapOrder(
     total: row.total,
     status: row.status,
     paymentStatus: row.payment_status,
-    // `date` reste pour compatibilité d'affichage historique, mais la vraie
-    // source de vérité est désormais `createdAt` (horodatage réel Supabase).
     date: row.created_at,
     createdAt: row.created_at,
     deliveryAddress: row.delivery_address_text ?? undefined,
     driverId: row.driver_id ?? undefined,
     driver,
-    deliveryPin: row.delivery_pin ?? undefined,
+    deliveryPin: pin,
+    deliveryConfirmed: row.delivery_confirmed,
     tracking: mapTracking(row),
   }
+}
+
+async function fetchDriverInfoByIds(driverIds: string[]) {
+  const uniqueIds = [...new Set(driverIds)]
+  const driverById = new Map<string, { name: string; initials: string }>()
+  if (uniqueIds.length === 0) return driverById
+  const { data: driverRows } = await supabase
+    .from('profiles')
+    .select('id, name, initials')
+    .in('id', uniqueIds)
+  for (const driver of driverRows ?? []) {
+    driverById.set(driver.id, {
+      name: driver.name,
+      initials: driver.initials ?? driver.name.slice(0, 2).toUpperCase(),
+    })
+  }
+  return driverById
+}
+
+async function fetchItemsForOrders(orderIds: string[]): Promise<OrderItemRow[]> {
+  if (orderIds.length === 0) return []
+  const { data } = await supabase
+    .from('order_items')
+    .select('order_id, product_id, name, quantity, unit_price')
+    .in('order_id', orderIds)
+  return (data as OrderItemRow[] | null) ?? []
 }
 
 export const orderService = {
@@ -104,9 +133,9 @@ export const orderService = {
     return transitions[from].includes(to)
   },
 
-  // Charge les commandes réelles du client connecté, avec leurs lignes.
-  // merchantNameById permet de rattacher le nom du commerce (encore local,
-  // les commerces ne sont pas migrés vers Supabase à ce stade).
+  // Charge les commandes réelles du client connecté, avec leurs lignes et
+  // le vrai code PIN à lui montrer (lecture autorisée par RLS uniquement
+  // parce qu'il en est le propriétaire).
   async fetchOrdersForCustomer(
     customerId: string,
     merchantNameById: (merchantId: string) => string,
@@ -117,42 +146,33 @@ export const orderService = {
       .eq('customer_id', customerId)
       .order('created_at', { ascending: false })
 
-    if (ordersError || !orderRows) return []
-    if (orderRows.length === 0) return []
+    if (ordersError || !orderRows || orderRows.length === 0) return []
 
     const orderIds = orderRows.map((row) => row.id)
-    const { data: itemRows } = await supabase
-      .from('order_items')
-      .select('order_id, product_id, name, quantity, unit_price')
-      .in('order_id', orderIds)
+    const itemRows = await fetchItemsForOrders(orderIds)
+    const driverById = await fetchDriverInfoByIds(
+      orderRows.map((row) => row.driver_id).filter((id): id is string => Boolean(id)),
+    )
 
-    const driverIds = [...new Set(orderRows.map((row) => row.driver_id).filter((id): id is string => Boolean(id)))]
-    const driverById = new Map<string, { name: string; initials: string }>()
-    if (driverIds.length > 0) {
-      const { data: driverRows } = await supabase
-        .from('profiles')
-        .select('id, name, initials')
-        .in('id', driverIds)
-      for (const driver of driverRows ?? []) {
-        driverById.set(driver.id, {
-          name: driver.name,
-          initials: driver.initials ?? driver.name.slice(0, 2).toUpperCase(),
-        })
-      }
-    }
+    const { data: pinRows } = await supabase
+      .from('order_pins')
+      .select('order_id, pin')
+      .in('order_id', orderIds)
+    const pinByOrderId = new Map((pinRows ?? []).map((row) => [row.order_id, row.pin as string]))
 
     return (orderRows as OrderRow[]).map((row) =>
       mapOrder(
         row,
-        (itemRows as OrderItemRow[] | null) ?? [],
+        itemRows,
         merchantNameById(row.merchant_local_id ?? row.merchant_id ?? ''),
         row.driver_id ? driverById.get(row.driver_id) : undefined,
+        pinByOrderId.get(row.id),
       ),
     )
   },
 
-  // Crée une vraie commande (et ses lignes) dans Supabase. Retourne la
-  // commande créée mappée au format client, ou null en cas d'échec.
+  // Crée une vraie commande (et ses lignes) dans Supabase. Le PIN est
+  // généré automatiquement côté base par un trigger (jamais côté frontend).
   async createOrder(input: {
     customerId: string
     merchantId: string
@@ -164,7 +184,6 @@ export const orderService = {
     deliveryAddressText?: string
   }): Promise<Order | null> {
     const orderNumber = `RB-${new Date().getFullYear()}-${String(Date.now()).slice(-6)}`
-    const deliveryPin = String(Math.floor(1000 + Math.random() * 9000))
 
     const { data: orderRow, error: orderError } = await supabase
       .from('orders')
@@ -178,7 +197,6 @@ export const orderService = {
         delivery_fee: input.deliveryFee,
         discount: 0,
         total: input.total,
-        delivery_pin: deliveryPin,
         delivery_address_text: input.deliveryAddressText ?? null,
       })
       .select(ORDER_COLUMNS)
@@ -205,16 +223,25 @@ export const orderService = {
 
     if (itemsError) return null
 
-    return mapOrder(orderRow as OrderRow, (insertedItems as OrderItemRow[] | null) ?? [], input.merchantName)
+    const { data: pinRow } = await supabase
+      .from('order_pins')
+      .select('pin')
+      .eq('order_id', orderRow.id)
+      .maybeSingle()
+
+    return mapOrder(
+      orderRow as OrderRow,
+      (insertedItems as OrderItemRow[] | null) ?? [],
+      input.merchantName,
+      undefined,
+      pinRow?.pin,
+    )
   },
 
-  // Écoute en temps réel les commandes du client (nouvelle commande, ou
-  // changement de statut fait par un commerçant/livreur). Retourne une
-  // fonction de désabonnement à appeler au démontage du composant.
   // Annule une commande à la demande du client. La policy RLS
   // "orders customer cancel" refuse déjà toute annulation hors des statuts
-  // pending/accepted côté base — canTransition ci-dessus fait le même
-  // contrôle côté UI pour ne proposer le bouton que quand c'est pertinent.
+  // pending/accepted côté base — canTransition fait le même contrôle côté
+  // UI pour ne proposer le bouton que quand c'est pertinent.
   async cancelOrder(orderId: string): Promise<boolean> {
     const { error } = await supabase
       .from('orders')
@@ -230,6 +257,120 @@ export const orderService = {
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'orders', filter: `customer_id=eq.${customerId}` },
+        () => onChange(),
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  },
+
+  // ------------------------------------------------------------------
+  // CÔTÉ LIVREUR
+  // ------------------------------------------------------------------
+
+  // Commandes réellement assignées au livreur connecté (peu importe le
+  // client). Nécessite la policy "orders participants read" déjà en place.
+  async fetchOrdersForDriver(
+    driverId: string,
+    merchantNameById: (merchantId: string) => string,
+  ): Promise<Order[]> {
+    const { data: orderRows, error } = await supabase
+      .from('orders')
+      .select(ORDER_COLUMNS)
+      .eq('driver_id', driverId)
+      .order('created_at', { ascending: false })
+
+    if (error || !orderRows || orderRows.length === 0) return []
+
+    const itemRows = await fetchItemsForOrders(orderRows.map((row) => row.id))
+    // Le livreur ne voit jamais le PIN : aucune lecture de order_pins ici.
+    return (orderRows as OrderRow[]).map((row) =>
+      mapOrder(row, itemRows, merchantNameById(row.merchant_local_id ?? row.merchant_id ?? '')),
+    )
+  },
+
+  // Missions disponibles : commandes prêtes, sans livreur assigné. Visible
+  // uniquement par un profil role='driver' (policy "orders visible as
+  // available mission").
+  async fetchAvailableMissions(merchantNameById: (merchantId: string) => string): Promise<Order[]> {
+    const { data: orderRows, error } = await supabase
+      .from('orders')
+      .select(ORDER_COLUMNS)
+      .eq('status', 'ready')
+      .is('driver_id', null)
+      .order('created_at', { ascending: true })
+
+    if (error || !orderRows || orderRows.length === 0) return []
+
+    const itemRows = await fetchItemsForOrders(orderRows.map((row) => row.id))
+    return (orderRows as OrderRow[]).map((row) =>
+      mapOrder(row, itemRows, merchantNameById(row.merchant_local_id ?? row.merchant_id ?? '')),
+    )
+  },
+
+  // Acceptation atomique d'une mission (RPC SECURITY DEFINER : verrouille
+  // la ligne pour empêcher deux livreurs d'accepter la même commande).
+  async acceptMission(orderId: string): Promise<{ ok: boolean; error?: string }> {
+    const { data, error } = await supabase.rpc('accept_delivery_mission', { p_order_id: orderId })
+    if (error) return { ok: false, error: error.message }
+    return data as { ok: boolean; error?: string }
+  },
+
+  // Transitions "normales" (pas de PIN requis) : récupéré, en livraison...
+  // Autorisées par la policy RLS "orders participants update", qui bloque
+  // explicitement toute tentative de passer directement à 'delivered'.
+  async advanceOrderStatus(orderId: string, status: OrderStatus): Promise<boolean> {
+    const timestampColumn: Partial<Record<OrderStatus, string>> = {
+      picked_up: 'picked_up_at',
+      delivering: 'out_for_delivery_at',
+    }
+    const column = timestampColumn[status]
+    const { error } = await supabase
+      .from('orders')
+      .update({ status, ...(column ? { [column]: new Date().toISOString() } : {}) })
+      .eq('id', orderId)
+
+    return !error
+  },
+
+  // Confirmation de livraison par PIN — jamais un simple update de statut.
+  // Toute la vérification (livreur autorisé, statut, PIN, tentatives) se
+  // fait dans confirm_delivery() côté base, de façon atomique.
+  async confirmDeliveryWithPin(
+    orderId: string,
+    pin: string,
+  ): Promise<{ ok: boolean; error?: string; attempts_left?: number }> {
+    const { data, error } = await supabase.rpc('confirm_delivery', {
+      p_order_id: orderId,
+      p_pin: pin,
+    })
+    if (error) return { ok: false, error: error.message }
+    return data as { ok: boolean; error?: string; attempts_left?: number }
+  },
+
+  subscribeToDriverOrders(driverId: string, onChange: () => void): () => void {
+    const channel = supabase
+      .channel(`orders:driver:${driverId}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'orders', filter: `driver_id=eq.${driverId}` },
+        () => onChange(),
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  },
+
+  subscribeToAvailableMissions(onChange: () => void): () => void {
+    const channel = supabase
+      .channel('orders:missions:available')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'orders' },
         () => onChange(),
       )
       .subscribe()
