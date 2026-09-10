@@ -630,6 +630,20 @@
   background: var(--orders-green);
 }
 
+.order-progress-time {
+  color: var(--orders-green);
+  font-family: "DM Mono", monospace;
+  font-size: 8px;
+  font-weight: 700;
+}
+
+.order-progress-time.muted {
+  color: var(--orders-muted);
+  font-family: inherit;
+  font-weight: 600;
+  font-style: italic;
+}
+
 .order-driver-banner {
   display: grid;
   grid-template-columns: 40px minmax(0, 1fr) auto;

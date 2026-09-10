@@ -193,6 +193,8 @@ export function Checkout({
   } = useApp()
 
   const [step, setStep] = useState(1)
+  const [submitting, setSubmitting] = useState(false)
+  const [orderError, setOrderError] = useState('')
 
   const [selectedAddress, setSelectedAddress] =
     useState<Address | undefined>(
@@ -204,13 +206,21 @@ export function Checkout({
   const deliveryFee = estimateDeliveryFee(selectedAddress)
   const total = cartTotal + deliveryFee
 
-  const confirm = () => {
+  const confirm = async () => {
     if (step < 4) {
       setStep(step + 1)
-    } else if (selectedAddress) {
-      placeOrder(selectedAddress)
-      onDone()
+      return
     }
+    if (!selectedAddress) return
+    setOrderError('')
+    setSubmitting(true)
+    const order = await placeOrder(selectedAddress)
+    setSubmitting(false)
+    if (!order) {
+      setOrderError("Impossible de confirmer votre commande pour le moment. Réessayez.")
+      return
+    }
+    onDone()
   }
 
   return (
@@ -253,11 +263,11 @@ export function Checkout({
 
           <select defaultValue="standard">
             <option value="standard">
-              Standard · 25-35 min
+              Standard
             </option>
 
-            <option value="express">
-              Express · 15-20 min
+            <option value="express" disabled>
+              Express · bientôt disponible
             </option>
           </select>
         </label>
@@ -296,11 +306,17 @@ export function Checkout({
 
       <button
         className="primary-button detail-cta"
-        disabled={!selectedAddress}
+        disabled={!selectedAddress || submitting}
         onClick={confirm}
       >
-        {step < 4 ? 'Continuer' : 'Confirmer la commande'}
+        {submitting ? 'Confirmation…' : step < 4 ? 'Continuer' : 'Confirmer la commande'}
       </button>
+
+      {orderError ? (
+        <p className="checkout-error" role="alert">
+          {orderError}
+        </p>
+      ) : null}
 
       {!selectedAddress ? (
         <p className="checkout-error">

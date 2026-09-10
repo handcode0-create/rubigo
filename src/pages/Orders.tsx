@@ -24,6 +24,46 @@ import "./Orders.css";
 
 type OrderTab = "active" | "history";
 
+// Formate une vraie date de commande à partir de createdAt (ISO Supabase).
+// N'invente jamais de texte : si createdAt est absent, retourne une chaîne
+// vide plutôt qu'un horodatage fictif.
+function formatOrderDate(createdAt?: string): string {
+  if (!createdAt) return "";
+  const date = new Date(createdAt);
+  if (Number.isNaN(date.getTime())) return "";
+  const isToday = date.toDateString() === new Date().toDateString();
+  const time = date.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+  if (isToday) return `Aujourd'hui, ${time}`;
+  return `${date.toLocaleDateString("fr-FR", { day: "2-digit", month: "short" })}, ${time}`;
+}
+
+function formatStepTime(iso?: string): string | null {
+  if (!iso) return null;
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return null;
+  return date.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+}
+
+// Associe chaque étape visible à son horodatage réel s'il existe déjà en
+// base. Aucune valeur n'est jamais calculée/inventée : si la donnée n'a pas
+// encore été écrite (ex. aucune interface commerçant/livreur réelle ne l'a
+// renseignée), l'étape reste affichée sans heure.
+function stepTimestamp(key: Order["status"], order: Order): string | null {
+  switch (key) {
+    case "pending":
+      return formatStepTime(order.createdAt);
+    case "preparing":
+      return formatStepTime(order.tracking?.preparingAt);
+    case "delivering":
+      return formatStepTime(order.tracking?.outForDeliveryAt);
+    case "delivered":
+      return formatStepTime(order.tracking?.deliveredAt);
+    default:
+      return null;
+  }
+}
+
+
 const ACTIVE_STATUSES: Order["status"][] = [
   "pending",
   "accepted",
@@ -62,6 +102,7 @@ const STATUS_STEPS: Array<{
 export function Orders() {
   const {
     orders,
+    ordersLoading,
     cart,
     cartTotal,
     cartDeliveryFee,
@@ -71,6 +112,13 @@ export function Orders() {
 
   const [tab, setTab] = useState<OrderTab>("active");
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [submittingCartOrder, setSubmittingCartOrder] = useState(false);
+
+  const handleQuickOrder = async () => {
+    setSubmittingCartOrder(true);
+    await placeOrder();
+    setSubmittingCartOrder(false);
+  };
 
   const visibleOrders = orders.filter((order) =>
     tab === "active"
@@ -144,9 +192,12 @@ export function Orders() {
           <button
             type="button"
             className="primary-button orders-cart-cta"
-            onClick={() => placeOrder()}
+            onClick={handleQuickOrder}
+            disabled={submittingCartOrder}
           >
-            Commander · {formatCurrency(cartTotal + cartDeliveryFee)}
+            {submittingCartOrder
+              ? "Confirmation…"
+              : `Commander · ${formatCurrency(cartTotal + cartDeliveryFee)}`}
           </button>
         </section>
       ) : null}
@@ -176,7 +227,14 @@ export function Orders() {
       </div>
 
       <div className="orders-list">
-        {visibleOrders.length ? (
+        {ordersLoading ? (
+          <div className="orders-empty">
+            <span className="orders-empty-icon">
+              <ReceiptText size={22} />
+            </span>
+            <strong>Chargement de vos commandes…</strong>
+          </div>
+        ) : visibleOrders.length ? (
           visibleOrders.map((order) => (
             <OrderPreview
               key={order.id}
@@ -213,7 +271,7 @@ function CartProductRow({
   item: OrderItem;
   onRemove: () => void;
 }) {
-  const product = products.find((entry) => entry.id === item.productId);
+  const product = products.find((entry) => entry.id === item.productId || entry.name === item.productId);
 
   return (
     <div className="order-product-row">
@@ -273,7 +331,7 @@ function OrderPreview({
           <div>
             <strong>{order.merchantName}</strong>
             <span>
-              {order.date} · {itemCount} article{itemCount > 1 ? "s" : ""}
+              {formatOrderDate(order.createdAt)} · {itemCount} article{itemCount > 1 ? "s" : ""}
             </span>
           </div>
 
@@ -282,7 +340,7 @@ function OrderPreview({
 
         <div className="order-preview-products">
           {previewItems.map((item) => {
-            const product = products.find((entry) => entry.id === item.productId);
+            const product = products.find((entry) => entry.id === item.productId || entry.name === item.productId);
 
             return (
               <div className="order-mini-product" key={item.productId}>
@@ -362,7 +420,7 @@ export function OrderDetail({ order }: { order: Order }) {
           <div>
             <p className="eyebrow">COMMERCE</p>
             <h1>{order.merchantName}</h1>
-            <p>{order.date}</p>
+            <p>{formatOrderDate(order.createdAt)}</p>
           </div>
         </div>
 
@@ -402,6 +460,7 @@ export function OrderDetail({ order }: { order: Order }) {
             const Icon = step.icon;
             const done = currentStepIndex > index;
             const current = currentStepIndex === index;
+            const time = done || current ? stepTimestamp(step.key, order) : null;
 
             return (
               <div
@@ -414,6 +473,11 @@ export function OrderDetail({ order }: { order: Order }) {
                   {done ? <Check size={14} /> : <Icon size={14} />}
                 </div>
                 <span>{step.label}</span>
+                {time ? (
+                  <small className="order-progress-time">{time}</small>
+                ) : current ? (
+                  <small className="order-progress-time muted">En cours</small>
+                ) : null}
 
                 {index < STATUS_STEPS.length - 1 ? (
                   <span
@@ -467,7 +531,7 @@ export function OrderDetail({ order }: { order: Order }) {
 
         <div className="order-detail-products">
           {filteredItems.map((item) => {
-            const product = products.find((entry) => entry.id === item.productId);
+            const product = products.find((entry) => entry.id === item.productId || entry.name === item.productId);
 
             return (
               <OrderDetailProduct

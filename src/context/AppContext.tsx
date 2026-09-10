@@ -7,7 +7,6 @@ import {
 } from "react";
 import {
   categories as initialCategories,
-  initialOrders,
   merchants,
   products,
   user as initialUser,
@@ -51,6 +50,7 @@ type AppContextValue = {
   authenticated: boolean;
   authLoading: boolean;
   orders: Order[];
+  ordersLoading: boolean;
   customers: User[];
   categories: Category[];
   favoriteMerchantIds: string[];
@@ -70,7 +70,7 @@ type AppContextValue = {
   addToCart: (item: OrderItem) => boolean;
   removeFromCart: (productId: string) => void;
   clearCart: () => void;
-  placeOrder: (address?: Address) => Order | null;
+  placeOrder: (address?: Address) => Promise<Order | null>;
   updateOrderStatus: (orderId: string, status: OrderStatus) => boolean;
   confirmDelivery: (orderId: string, pin: string) => boolean;
   switchRole: (role: Role) => void;
@@ -114,9 +114,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     storage.get("favorites", [merchants[1].id]),
   );
   const [cart, setCart] = useState<OrderItem[]>(() => storage.get("cart", []));
-  const [orders, setOrders] = useState<Order[]>(() =>
-    storage.get("orders", initialOrders),
-  );
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [ordersLoading, setOrdersLoading] = useState(true);
   const [customers, setCustomers] = useState<User[]>(() =>
     storage.get("customers", [initialUser]),
   );
@@ -176,7 +175,42 @@ export function AppProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  // Pont temporaire : tant que les adresses ne sont pas migrées vers Supabase
+  // Commandes réelles : chargées depuis Supabase pour le client connecté,
+  // puis synchronisées en temps réel (Realtime) — plus de données locales
+  // de démonstration. Les commerces restent pour l'instant des données
+  // locales (data.ts) : on ne fait le lien que par nom/identifiant local.
+  useEffect(() => {
+    if (!authenticated || !user.id) {
+      setOrders([]);
+      setOrdersLoading(false);
+      return;
+    }
+
+    let isMounted = true;
+    const customerId = user.id;
+    const merchantNameById = (merchantId: string) =>
+      merchants.find((entry) => entry.id === merchantId)?.name ?? "Commerce RUBIGO";
+
+    const load = async () => {
+      setOrdersLoading(true);
+      const result = await orderService.fetchOrdersForCustomer(customerId, merchantNameById);
+      if (!isMounted) return;
+      setOrders(result);
+      setOrdersLoading(false);
+    };
+
+    load();
+    const unsubscribe = orderService.subscribeToCustomerOrders(customerId, () => {
+      void load();
+    });
+
+    return () => {
+      isMounted = false;
+      unsubscribe();
+    };
+  }, [authenticated, user.id]);
+
+
   // (étape ultérieure), on les garde en local par utilisateur pour ne pas les
   // perdre entre deux sessions. Ceci ne sert jamais à déterminer l'authentification.
   useEffect(() => {
@@ -189,7 +223,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
     [favoriteMerchantIds],
   );
   useEffect(() => storage.set("cart", cart), [cart]);
-  useEffect(() => storage.set("orders", orders), [orders]);
   useEffect(() => storage.set("customers", customers), [customers]);
   useEffect(() => storage.set("categories", categories), [categories]);
   useEffect(() => storage.set("notifications", notifications), [notifications]);
@@ -302,38 +335,30 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const clearCart = () => setCart([]);
 
-  const placeOrder = (address?: Address) => {
-    if (!cart.length || !cartMerchant) return null;
+  const placeOrder = async (address?: Address): Promise<Order | null> => {
+    if (!cart.length || !cartMerchant || !user.id) return null;
     const selectedAddress =
       address ?? user.addresses?.find((item) => item.isDefault);
     const subtotal = calculateSubtotal(cart);
-    const distanceMeters = calculateDistanceMeters(
-      cartMerchant.location,
-      selectedAddress?.location,
-    );
     const deliveryFee = estimateDeliveryFee(selectedAddress);
-    const createdAt = new Date().toISOString();
-    const order: Order = {
-      id: `order-${Date.now()}`,
-      orderNumber: `RB-${new Date().getFullYear()}-${String(orders.length + 124).padStart(6, "0")}`,
+    const total = calculateTotal(subtotal, deliveryFee);
+
+    const order = await orderService.createOrder({
       customerId: user.id,
       merchantId: cartMerchant.id,
       merchantName: cartMerchant.name,
       items: cart,
       subtotal,
       deliveryFee,
-      discount: 0,
-      total: calculateTotal(subtotal, deliveryFee),
-      status: "pending",
-      paymentStatus: "pending",
-      date: "À l’instant",
-      createdAt,
-      deliveryAddress: selectedAddress?.line ?? user.city,
-      deliveryLocation: selectedAddress?.location,
-      pickupLocation: cartMerchant.location,
-      distanceMeters,
-      deliveryPin: String(Math.floor(1000 + Math.random() * 9000)),
-    };
+      total,
+      deliveryAddressText: selectedAddress?.line ?? user.city,
+    });
+
+    if (!order) {
+      notify("Impossible de créer votre commande pour le moment.");
+      return null;
+    }
+
     setOrders((current) => [order, ...current]);
     setCart([]);
     notify("Votre commande a été créée.", order.id);
@@ -497,6 +522,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     authenticated,
     authLoading,
     orders,
+    ordersLoading,
     customers,
     categories,
     favoriteMerchantIds,

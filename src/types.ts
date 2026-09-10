@@ -16,5 +16,14 @@ export type Address = { id: string; label: string; line: string; isDefault: bool
 export type Driver = { id: string; name: string; initials: string; status: DriverStatus; phone: string; earnings: number; currentLocation?: Location }
 export type Payment = { method: 'cash' | 'mobile_money'; status: PaymentStatus }
 export type Notification = { id: string; userId: string; orderId?: string; message: string; read: boolean; createdAt: string }
-export type Order = { id: string; orderNumber?: string; customerId?: string; merchantId: string; merchantName: string; items: OrderItem[]; subtotal?: number; deliveryFee?: number; discount?: number; total: number; status: OrderStatus; paymentStatus?: PaymentStatus; date: string; createdAt?: string; deliveryAddress?: string; pickupLocation?: Location; deliveryLocation?: Location; distanceMeters?: number; estimatedDurationSeconds?: number; driverId?: string; driver?: { name: string; initials: string; eta: string; currentLocation?: Location }; deliveryPin?: string }
+export type OrderTracking = {
+  confirmedAt?: string
+  preparingAt?: string
+  readyAt?: string
+  pickedUpAt?: string
+  outForDeliveryAt?: string
+  deliveredAt?: string
+  estimatedDeliveryAt?: string
+}
+export type Order = { id: string; orderNumber?: string; customerId?: string; merchantId: string; merchantName: string; items: OrderItem[]; subtotal?: number; deliveryFee?: number; discount?: number; total: number; status: OrderStatus; paymentStatus?: PaymentStatus; date: string; createdAt?: string; deliveryAddress?: string; pickupLocation?: Location; deliveryLocation?: Location; distanceMeters?: number; estimatedDurationSeconds?: number; driverId?: string; driver?: { name: string; initials: string; eta?: string; currentLocation?: Location }; deliveryPin?: string; tracking?: OrderTracking }
 export type User = { id?: string; name: string; phone: string; initials: string; city: string; email?: string; role?: Role; addresses?: Address[]; payment?: Payment }
