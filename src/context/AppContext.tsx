@@ -73,6 +73,7 @@ type AppContextValue = {
   placeOrder: (address?: Address) => Promise<Order | null>;
   updateOrderStatus: (orderId: string, status: OrderStatus) => boolean;
   confirmDelivery: (orderId: string, pin: string) => boolean;
+  cancelOrder: (orderId: string) => Promise<boolean>;
   switchRole: (role: Role) => void;
   switchToCustomer: () => void;
   addCategory: (label: string) => Category | null;
@@ -383,6 +384,30 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return updateOrderStatus(orderId, "delivered");
   };
 
+  // Annulation réelle par le client (commande encore chez Supabase, pas de
+  // simulation locale). La policy RLS "orders customer cancel" refuse déjà
+  // toute annulation hors pending/accepted ; canTransition évite un aller-
+  // retour réseau inutile quand ce n'est de toute façon pas permis.
+  const cancelOrder = async (orderId: string): Promise<boolean> => {
+    const order = orders.find((item) => item.id === orderId);
+    if (!order || !orderService.canTransition(order.status, "cancelled"))
+      return false;
+
+    const success = await orderService.cancelOrder(orderId);
+    if (!success) {
+      notify("Impossible d'annuler cette commande pour le moment.");
+      return false;
+    }
+
+    setOrders((current) =>
+      current.map((item) =>
+        item.id === orderId ? { ...item, status: "cancelled" as OrderStatus } : item,
+      ),
+    );
+    notify("Votre commande a été annulée.", orderId);
+    return true;
+  };
+
   const switchRole = (role: Role) =>
     updateCurrentUser((current) => ({ ...current, role }));
 
@@ -547,6 +572,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     placeOrder,
     updateOrderStatus,
     confirmDelivery,
+    cancelOrder,
     switchRole,
     switchToCustomer,
     addCategory,

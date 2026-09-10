@@ -644,6 +644,64 @@
   font-style: italic;
 }
 
+.order-cancel-zone {
+  margin-top: 14px;
+}
+
+.order-cancel-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 12px;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: var(--orders-radius, 12px);
+  color: var(--rubigo-danger);
+  background: rgba(239, 68, 68, 0.06);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.order-cancel-confirm {
+  padding: 14px;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: var(--orders-radius, 12px);
+  background: rgba(239, 68, 68, 0.06);
+  text-align: center;
+}
+
+.order-cancel-confirm p {
+  margin: 0 0 10px;
+  color: var(--orders-text, #111827);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.order-cancel-confirm-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.order-cancel-confirm-actions button {
+  flex: 1;
+  padding: 10px;
+  border-radius: 9px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.order-cancel-confirm-btn {
+  color: #ffffff;
+  background: var(--rubigo-danger);
+}
+
+.order-cancel-confirm-actions button:last-child {
+  color: var(--orders-muted);
+  background: var(--orders-surface, #ffffff);
+  border: 1px solid var(--orders-border);
+}
+
 .order-driver-banner {
   display: grid;
   grid-template-columns: 40px minmax(0, 1fr) auto;

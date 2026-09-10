@@ -18,6 +18,7 @@ import {
 
 import { merchants, products } from "../data";
 import { useApp } from "../context/AppContext";
+import { orderService } from "../services/orderService";
 import type { Order, OrderItem } from "../types";
 import { formatCurrency } from "../utils/formatCurrency";
 import "./Orders.css";
@@ -127,6 +128,11 @@ export function Orders() {
   );
 
   if (selectedOrder) {
+    // On relit la commande depuis le contexte (source de vérité) plutôt que
+    // de garder la copie figée au moment du clic : une annulation ou une
+    // mise à jour Realtime doit se refléter immédiatement ici.
+    const liveOrder = orders.find((item) => item.id === selectedOrder.id) ?? selectedOrder;
+
     return (
       <div className="page-content orders-page">
         <button
@@ -138,7 +144,7 @@ export function Orders() {
           <span>Retour aux commandes</span>
         </button>
 
-        <OrderDetail order={selectedOrder} />
+        <OrderDetail order={liveOrder} />
       </div>
     );
   }
@@ -376,8 +382,25 @@ function OrderPreview({
 }
 
 export function OrderDetail({ order }: { order: Order }) {
+  const { cancelOrder } = useApp();
   const [query, setQuery] = useState("");
+  const [cancelling, setCancelling] = useState(false);
+  const [confirmingCancel, setConfirmingCancel] = useState(false);
+  const [cancelError, setCancelError] = useState("");
   const merchant = merchants.find((entry) => entry.id === order.merchantId);
+
+  const canCancel = orderService.canTransition(order.status, "cancelled");
+
+  const handleCancel = async () => {
+    setCancelling(true);
+    setCancelError("");
+    const success = await cancelOrder(order.id);
+    setCancelling(false);
+    setConfirmingCancel(false);
+    if (!success) {
+      setCancelError("Impossible d'annuler cette commande pour le moment.");
+    }
+  };
 
   const filteredItems = useMemo(() => {
     const normalized = query.trim().toLowerCase();
@@ -505,6 +528,43 @@ export function OrderDetail({ order }: { order: Order }) {
               </span>
             </div>
             <ShieldCheck size={20} />
+          </div>
+        ) : null}
+
+        {canCancel ? (
+          <div className="order-cancel-zone">
+            {confirmingCancel ? (
+              <div className="order-cancel-confirm">
+                <p>Confirmer l'annulation de cette commande ?</p>
+                <div className="order-cancel-confirm-actions">
+                  <button
+                    type="button"
+                    className="order-cancel-confirm-btn"
+                    onClick={handleCancel}
+                    disabled={cancelling}
+                  >
+                    {cancelling ? "Annulation…" : "Oui, annuler"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setConfirmingCancel(false)}
+                    disabled={cancelling}
+                  >
+                    Retour
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button
+                type="button"
+                className="order-cancel-trigger"
+                onClick={() => setConfirmingCancel(true)}
+              >
+                <XCircle size={16} />
+                <span>Annuler la commande</span>
+              </button>
+            )}
+            {cancelError ? <p className="checkout-error">{cancelError}</p> : null}
           </div>
         ) : null}
       </section>

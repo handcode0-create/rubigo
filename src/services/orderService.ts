@@ -211,6 +211,19 @@ export const orderService = {
   // Écoute en temps réel les commandes du client (nouvelle commande, ou
   // changement de statut fait par un commerçant/livreur). Retourne une
   // fonction de désabonnement à appeler au démontage du composant.
+  // Annule une commande à la demande du client. La policy RLS
+  // "orders customer cancel" refuse déjà toute annulation hors des statuts
+  // pending/accepted côté base — canTransition ci-dessus fait le même
+  // contrôle côté UI pour ne proposer le bouton que quand c'est pertinent.
+  async cancelOrder(orderId: string): Promise<boolean> {
+    const { error } = await supabase
+      .from('orders')
+      .update({ status: 'cancelled', cancelled_at: new Date().toISOString() })
+      .eq('id', orderId)
+
+    return !error
+  },
+
   subscribeToCustomerOrders(customerId: string, onChange: () => void): () => void {
     const channel = supabase
       .channel(`orders:customer:${customerId}`)
