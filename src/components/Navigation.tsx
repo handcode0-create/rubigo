@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { History, LayoutGrid } from 'lucide-react'
 import type { Page } from '../types'
 import {
   FavoritesIcon,
@@ -13,22 +14,33 @@ type NavItem = {
   icon: (active: boolean) => ReactNode
 }
 
-const navItems: NavItem[] = [
+const customerNavItems: NavItem[] = [
   { id: 'home', label: 'Accueil', icon: () => <HomeIcon size={22} /> },
   { id: 'favorites', label: 'Favoris', icon: (active) => <FavoritesIcon size={22} filled={active} /> },
   { id: 'orders', label: 'Commandes', icon: () => <OrdersIcon size={22} /> },
   { id: 'profile', label: 'Profil', icon: () => <ProfileIcon size={22} /> },
 ]
 
+const driverNavItems: NavItem[] = [
+  { id: 'driver', label: 'Accueil', icon: () => <HomeIcon size={22} /> },
+  { id: 'driver-missions', label: 'Missions', icon: () => <LayoutGrid size={20} /> },
+  { id: 'driver-history', label: 'Historique', icon: () => <History size={20} /> },
+  { id: 'profile', label: 'Profil', icon: () => <ProfileIcon size={22} /> },
+]
+
 export function BottomNavigation({
   page,
   onNavigate,
-  cartCount,
+  cartCount = 0,
+  variant = 'customer',
 }: {
   page: Page
   onNavigate: (page: Page) => void
-  cartCount: number
+  cartCount?: number
+  variant?: 'customer' | 'driver'
 }) {
+  const navItems = variant === 'driver' ? driverNavItems : customerNavItems
+
   return (
     <nav className="mobile-nav" aria-label="Navigation principale">
       {navItems.map((item) => {

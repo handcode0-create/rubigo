@@ -14,7 +14,7 @@ import { Login } from "./pages/Login";
 import { Orders } from "./pages/Orders";
 import { Profile } from "./pages/Profile";
 import { Checkout, MerchantDetail, ProductDetail } from "./pages/Details";
-import { DriverDashboard, MerchantDashboard } from "./pages/RolePages";
+import { DriverHistory, DriverHome, DriverMissions, MerchantDashboard } from "./pages/RolePages";
 import { AdminDashboard } from "./pages/AdminDashboard";
 import { routerService } from "./services/routerService";
 import { merchants, products } from "./data";
@@ -142,17 +142,35 @@ function AppShell() {
     favorites: <Favorites />,
     profile: <Profile onNavigate={navigate} />,
     merchant: <MerchantDashboard onReturnToCustomer={returnToCustomer} />,
-    driver: <DriverDashboard onReturnToCustomer={returnToCustomer} />,
+    driver: <DriverHome onReturnToCustomer={returnToCustomer} />,
+    "driver-missions": <DriverMissions onReturnToCustomer={returnToCustomer} />,
+    "driver-history": <DriverHistory onReturnToCustomer={returnToCustomer} />,
     admin: <AdminDashboard onReturnToCustomer={returnToCustomer} />,
   };
 
-  const rolePages: Partial<Record<Role, Page>> = {
+  // Un compte non-client est cantonné à ses propres pages (sécurité de
+  // navigation, pas de RLS ici — juste l'UI) : un livreur peut circuler
+  // entre Accueil/Missions/Historique/Profil, mais jamais atterrir sur le
+  // Home ou l'Explore du client. Par défaut (première visite, ou page hors
+  // périmètre), on retombe sur le tableau de bord du rôle.
+  const roleDefaultPage: Partial<Record<Role, Page>> = {
     merchant: "merchant",
     driver: "driver",
     admin: "admin",
   };
 
-  const rolePage = rolePages[activeRole] ?? page;
+  const roleAllowedPages: Partial<Record<Role, Page[]>> = {
+    driver: ["driver", "driver-missions", "driver-history", "profile"],
+    merchant: ["merchant"],
+    admin: ["admin"],
+  };
+
+  const rolePage =
+    activeRole === "customer"
+      ? page
+      : (roleAllowedPages[activeRole]?.includes(page)
+          ? page
+          : roleDefaultPage[activeRole]) ?? page;
 
   const content = checkout ? (
     <Checkout
@@ -229,6 +247,8 @@ function AppShell() {
           onNavigate={navigate}
           cartCount={cart.reduce((sum, item) => sum + item.quantity, 0)}
         />
+      ) : activeRole === "driver" ? (
+        <BottomNavigation page={rolePage} onNavigate={navigate} variant="driver" />
       ) : null}
     </div>
   );

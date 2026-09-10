@@ -1,6 +1,6 @@
 export type Role = 'customer' | 'merchant' | 'driver' | 'admin'
 export type Location = { latitude: number; longitude: number; address?: string; placeId?: string; city?: string; district?: string; country?: string }
-export type Page = 'home' | 'explore' | 'orders' | 'favorites' | 'profile' | 'merchant' | 'driver' | 'admin'
+export type Page = 'home' | 'explore' | 'orders' | 'favorites' | 'profile' | 'merchant' | 'driver' | 'driver-missions' | 'driver-history' | 'admin'
 export type OrderStatus = 'pending' | 'accepted' | 'preparing' | 'ready' | 'driver_assigned' | 'picked_up' | 'delivering' | 'delivered' | 'cancelled' | 'merchant_rejected'
 export type PaymentStatus = 'pending' | 'paid' | 'failed' | 'refunded'
 export type DriverStatus = 'offline' | 'available' | 'busy'
