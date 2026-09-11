@@ -676,8 +676,26 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const login = async (email: string, password: string): Promise<AuthActionResult> => {
     const result = await authService.signIn(email, password);
     if (!result.ok) return { ok: false, message: result.message };
-    // La session déclenchée par signIn met à jour user/authenticated via
-    // onAuthStateChange (cf. useEffect ci-dessus) — pas besoin de le faire ici.
+
+    // signIn() ne fait que valider les identifiants côté Supabase Auth.
+    // onAuthStateChange (cf. useEffect ci-dessus) chargera ensuite le profil
+    // de façon découplée — ce qui veut dire que si CE chargement échoue
+    // (colonne manquante, RLS, réseau...), l'utilisateur ne recevait
+    // auparavant AUCUN retour : il restait juste bloqué sur l'écran de
+    // connexion sans erreur ni redirection. On vérifie donc ici,
+    // explicitement, que la session ET le profil sont bien exploitables
+    // avant de renvoyer un succès.
+    const session = await authService.getSession();
+    if (!session?.user) {
+      return { ok: false, message: "La connexion a échoué. Réessayez." };
+    }
+    const profile = await authService.ensureProfile(session.user);
+    if (!profile) {
+      return {
+        ok: false,
+        message: "Connexion réussie mais impossible de charger votre profil. Réessayez dans un instant.",
+      };
+    }
     return { ok: true };
   };
 
