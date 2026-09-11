@@ -34,6 +34,14 @@ type OrderItemRow = {
   unit_price: number
 }
 
+type AvailableDeliveryDriver = {
+  id: string
+  name: string
+  initials: string
+  phone: string
+  city: string
+}
+
 // Le PIN N'EST JAMAIS inclus dans cette liste de colonnes : il vit dans sa
 // propre table (order_pins), lisible uniquement par le client propriétaire
 // de la commande (voir migration 0006). Le livreur n'y a jamais accès.
@@ -307,6 +315,33 @@ export const orderService = {
   // tentative de sortir de ce périmètre (ex. passer à 'driver_assigned').
   async updateOrderStatusAsMerchant(orderId: string, status: OrderStatus): Promise<boolean> {
     return this.advanceOrderStatus(orderId, status)
+  },
+
+
+  async fetchAvailableDeliveryDrivers(): Promise<AvailableDeliveryDriver[]> {
+    const { data, error } = await supabase.rpc('get_available_delivery_drivers')
+    if (error) {
+      console.error('Erreur chargement livreurs disponibles:', error.message)
+      return []
+    }
+    return (data as AvailableDeliveryDriver[] | null) ?? []
+  },
+
+  async assignOrderDriver(
+    orderId: string,
+    driverId: string,
+  ): Promise<{ ok: boolean; error?: string }> {
+    const { data, error } = await supabase.rpc('assign_order_driver', {
+      p_order_id: orderId,
+      p_driver_id: driverId,
+    })
+
+    if (error) {
+      console.error('Erreur affectation livreur:', error.message)
+      return { ok: false, error: error.message }
+    }
+
+    return data as { ok: boolean; error?: string }
   },
 
   subscribeToMerchantOrders(merchantLocalId: string, onChange: () => void): () => void {

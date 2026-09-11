@@ -26,6 +26,7 @@ import { merchants, products } from "./data";
 import type { Merchant, Page, Product, Role } from "./types";
 import { SplashScreen } from "./components/SplashScreen";
 
+
 const SPLASH_DURATION = 5000;
 
 function AppShell() {

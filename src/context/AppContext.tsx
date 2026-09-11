@@ -493,6 +493,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
       notify("Impossible de mettre à jour cette commande pour le moment.");
       return false;
     }
+
+    // Mise à jour immédiate de l'interface Merchant après confirmation Supabase.
+    // Realtime reste actif en parallèle : cette mutation locale évite le délai
+    // visuel entre le clic et l'arrivée de l'événement Realtime.
+    setMerchantOrders((current) =>
+      current.map((item) =>
+        item.id === orderId ? { ...item, status } : item,
+      ),
+    );
+
     notify(`Commande mise à jour : ${status.replace("_", " ")}.`, orderId);
     return true;
   };
