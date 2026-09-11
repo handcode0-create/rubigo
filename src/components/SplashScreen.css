@@ -12,8 +12,8 @@
     max(24px, env(safe-area-inset-top))
     24px
     max(24px, env(safe-area-inset-bottom));
-  color: #ffffff;
-  background: #0f5132;
+  color: #111827;
+  background: #ffffff;
 }
 
 .splash-content {
@@ -31,7 +31,7 @@
   width: clamp(138px, 38vw, 190px);
   height: auto;
   object-fit: contain;
-  filter: drop-shadow(0 10px 24px rgba(0, 0, 0, 0.16));
+  filter: drop-shadow(0 8px 20px rgba(17, 24, 39, 0.08));
   animation:
     splash-logo-in 700ms cubic-bezier(0.22, 1, 0.36, 1) both,
     splash-logo-float 2400ms ease-in-out 700ms infinite;
@@ -42,7 +42,7 @@
   flex-direction: column;
   gap: 2px;
   margin-top: 22px;
-  color: rgba(255, 255, 255, 0.94);
+  color: #173f32;
   font-family: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, sans-serif;
   font-size: clamp(15px, 4vw, 19px);
   font-weight: 600;
@@ -51,8 +51,12 @@
   animation: splash-tagline-in 650ms ease 180ms both;
 }
 
+.splash-tagline span:first-child {
+  color: #173f32;
+}
+
 .splash-tagline span:last-child {
-  color: #d6e86a;
+  color: #16a34a;
 }
 
 .splash-footer {
@@ -64,7 +68,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  color: rgba(255, 255, 255, 0.48);
+  color: #9ca3af;
   font-family: "DM Mono", monospace;
   font-size: 8px;
   font-weight: 500;
@@ -81,7 +85,7 @@
   height: 2px;
   overflow: hidden;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.12);
+  background: #e5e7eb;
   animation: splash-fade-in 600ms ease 400ms both;
 }
 
@@ -90,7 +94,7 @@
   width: 32%;
   height: 100%;
   border-radius: inherit;
-  background: #d6e86a;
+  background: #16a34a;
   transform: translateX(-120%);
   animation: splash-loader 1200ms cubic-bezier(0.65, 0, 0.35, 1) 350ms infinite;
 }

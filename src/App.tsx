@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import "./App.css";
 import { AppProvider, useApp } from "./context/AppContext";
 import { BottomNavigation } from "./components/Navigation";
@@ -26,16 +26,27 @@ import { merchants, products } from "./data";
 import type { Merchant, Page, Product, Role } from "./types";
 import { SplashScreen } from "./components/SplashScreen";
 
+const SPLASH_DURATION = 5000;
+
 function AppShell() {
   const [page, setPage] = useState<Page>("home");
-  const [selectedMerchant, setSelectedMerchant] = useState<Merchant | null>(
-    null,
-  );
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(
-    null,
-  );
+
+  const [selectedMerchant, setSelectedMerchant] =
+    useState<Merchant | null>(null);
+
+  const [selectedProduct, setSelectedProduct] =
+    useState<Product | null>(null);
+
   const [checkout, setCheckout] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+
+  /*
+   * Le timer démarre dès que AppShell est monté.
+   * Le Splash est donc présent dès le premier rendu de l'application.
+   */
+  const splashStartedAt = useRef(Date.now());
+
+  const [splashFinished, setSplashFinished] = useState(false);
 
   const {
     activeRole,
@@ -51,6 +62,28 @@ function AppShell() {
     cancelCartReplacement,
   } = useApp();
 
+  /*
+   * Durée minimale du Splash : 20 secondes.
+   *
+   * Si Supabase termine avant 20 secondes :
+   * → on attend jusqu'à 20 secondes.
+   *
+   * Si Supabase prend plus de 20 secondes :
+   * → on garde le Splash jusqu'à ce que la session soit prête.
+   */
+  useEffect(() => {
+    const elapsed = Date.now() - splashStartedAt.current;
+    const remaining = Math.max(0, SPLASH_DURATION - elapsed);
+
+    const timer = window.setTimeout(() => {
+      setSplashFinished(true);
+    }, remaining);
+
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, []);
+
   useEffect(() => {
     const handleHashChange = () => {
       const state = routerService.getCurrentState();
@@ -60,20 +93,24 @@ function AppShell() {
         setSelectedProduct(null);
         setSelectedMerchant(null);
       } else if (state.merchantId) {
-        const m = merchants.find((item) => item.id === state.merchantId);
+        const merchant = merchants.find(
+          (item) => item.id === state.merchantId,
+        );
 
-        if (m) {
-          setSelectedMerchant(m);
+        if (merchant) {
+          setSelectedMerchant(merchant);
           setSelectedProduct(null);
           setCheckout(false);
           setPage("explore");
           return;
         }
       } else if (state.productId) {
-        const p = products.find((item) => item.id === state.productId);
+        const product = products.find(
+          (item) => item.id === state.productId,
+        );
 
-        if (p) {
-          setSelectedProduct(p);
+        if (product) {
+          setSelectedProduct(product);
           setSelectedMerchant(null);
           setCheckout(false);
           setPage("explore");
@@ -90,18 +127,18 @@ function AppShell() {
     window.addEventListener("hashchange", handleHashChange);
     handleHashChange();
 
-    return () => window.removeEventListener("hashchange", handleHashChange);
+    return () =>
+      window.removeEventListener("hashchange", handleHashChange);
   }, []);
 
   /*
-   * Splash Screen RUBIGO
+   * SPLASH SCREEN
    *
-   * Tant que Supabase vérifie la session :
-   * - on affiche le Splash Screen ;
-   * - aucune page de l'application n'est rendue ;
-   * - la logique d'authentification existante reste inchangée.
+   * On ne quitte le Splash que lorsque :
+   * 1. les 20 secondes sont écoulées ;
+   * 2. Supabase a terminé la vérification de session.
    */
-  if (authLoading) {
+  if (!splashFinished || authLoading) {
     return <SplashScreen />;
   }
 
@@ -110,7 +147,9 @@ function AppShell() {
   }
 
   const navigate = (nextPage: Page) => {
-    routerService.navigate({ page: nextPage });
+    routerService.navigate({
+      page: nextPage,
+    });
   };
 
   const openMerchant = (merchant: Merchant) => {
@@ -196,10 +235,6 @@ function AppShell() {
     ),
   };
 
-  /*
-   * Les comptes avec un rôle particulier restent cantonnés
-   * à leurs propres espaces.
-   */
   const roleDefaultPage: Partial<Record<Role, Page>> = {
     merchant: "merchant",
     driver: "driver",
