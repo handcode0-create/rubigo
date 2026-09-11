@@ -90,6 +90,7 @@ type AppContextValue = {
   removeCategory: (categoryId: string) => boolean;
   markAsRead: (id: string) => void;
   markAllAsRead: () => void;
+  deleteNotification: (id: string) => void;
   addAddress: (
     label: string,
     line: string,
@@ -726,6 +727,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return { ok: true };
   };
 
+  const deleteNotification = (id: string) =>
+  setNotifications((current) =>
+    current.filter((notification) => notification.id !== id),
+  );
+
   const activeRole = user.role ?? "customer";
 
   const value = {
@@ -783,6 +789,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     register,
     logout,
     updateProfile,
+    deleteNotification,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
