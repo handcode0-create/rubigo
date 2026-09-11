@@ -18,8 +18,9 @@ import {
   DriverHistory,
   DriverHome,
   DriverMissions,
-  MerchantDashboard,
 } from "./pages/RolePages";
+
+import { MerchantDashboard } from "./pages/MerchantDashboard";
 import { AdminDashboard } from "./pages/AdminDashboard";
 import { routerService } from "./services/routerService";
 import { merchants, products } from "./data";
