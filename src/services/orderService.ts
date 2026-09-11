@@ -273,6 +273,58 @@ export const orderService = {
   },
 
   // ------------------------------------------------------------------
+  // CÔTÉ COMMERÇANT
+  // ------------------------------------------------------------------
+
+  // Commandes réelles du commerce du marchand connecté (via profiles.merchant_local_id,
+  // cf. migration 0007). Aucun filtrage ici : c'est la policy RLS "orders
+  // merchant local read" qui garantit qu'un marchand ne voit que SES commandes.
+  async fetchOrdersForMerchant(
+    merchantLocalId: string,
+    merchantName: string,
+  ): Promise<Order[]> {
+    const { data: orderRows, error } = await supabase
+      .from('orders')
+      .select(ORDER_COLUMNS)
+      .eq('merchant_local_id', merchantLocalId)
+      .order('created_at', { ascending: false })
+
+    if (error || !orderRows || orderRows.length === 0) return []
+
+    const itemRows = await fetchItemsForOrders(orderRows.map((row) => row.id))
+    const driverById = await fetchDriverInfoByIds(
+      orderRows.map((row) => row.driver_id).filter((id): id is string => Boolean(id)),
+    )
+    // Le marchand ne voit jamais le PIN client : aucune lecture de order_pins ici.
+    return (orderRows as OrderRow[]).map((row) =>
+      mapOrder(row, itemRows, merchantName, row.driver_id ? driverById.get(row.driver_id) : undefined),
+    )
+  },
+
+  // Transitions marchand (pending -> accepted/merchant_rejected -> preparing -> ready).
+  // Réutilise advanceOrderStatus : la policy RLS "orders merchant local update"
+  // (migration 0007) est la seule vraie barrière — elle refuse déjà toute
+  // tentative de sortir de ce périmètre (ex. passer à 'driver_assigned').
+  async updateOrderStatusAsMerchant(orderId: string, status: OrderStatus): Promise<boolean> {
+    return this.advanceOrderStatus(orderId, status)
+  },
+
+  subscribeToMerchantOrders(merchantLocalId: string, onChange: () => void): () => void {
+    const channel = supabase
+      .channel(`orders:merchant:${merchantLocalId}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'orders', filter: `merchant_local_id=eq.${merchantLocalId}` },
+        () => onChange(),
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  },
+
+  // ------------------------------------------------------------------
   // CÔTÉ LIVREUR
   // ------------------------------------------------------------------
 
@@ -331,6 +383,9 @@ export const orderService = {
   // été modifiée, pas seulement l'absence d'erreur.
   async advanceOrderStatus(orderId: string, status: OrderStatus): Promise<boolean> {
     const timestampColumn: Partial<Record<OrderStatus, string>> = {
+      accepted: 'confirmed_at',
+      preparing: 'preparing_at',
+      ready: 'ready_at',
       picked_up: 'picked_up_at',
       delivering: 'out_for_delivery_at',
     }

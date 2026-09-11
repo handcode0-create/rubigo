@@ -51,6 +51,8 @@ type AppContextValue = {
   authLoading: boolean;
   orders: Order[];
   ordersLoading: boolean;
+  merchantOrders: Order[];
+  merchantOrdersLoading: boolean;
   driverOrders: Order[];
   driverOrdersLoading: boolean;
   availableMissions: Order[];
@@ -76,6 +78,7 @@ type AppContextValue = {
   clearCart: () => void;
   placeOrder: (address?: Address) => Promise<Order | null>;
   updateOrderStatus: (orderId: string, status: OrderStatus) => boolean;
+  updateMerchantOrderStatus: (orderId: string, status: OrderStatus) => Promise<boolean>;
   confirmDelivery: (orderId: string, pin: string) => Promise<{ ok: boolean; message?: string }>;
   acceptMission: (orderId: string) => Promise<boolean>;
   advanceDriverOrderStatus: (orderId: string, status: OrderStatus) => Promise<boolean>;
@@ -123,6 +126,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [cart, setCart] = useState<OrderItem[]>(() => storage.get("cart", []));
   const [orders, setOrders] = useState<Order[]>([]);
   const [ordersLoading, setOrdersLoading] = useState(true);
+  const [merchantOrders, setMerchantOrders] = useState<Order[]>([]);
+  const [merchantOrdersLoading, setMerchantOrdersLoading] = useState(false);
   const [driverOrders, setDriverOrders] = useState<Order[]>([]);
   const [driverOrdersLoading, setDriverOrdersLoading] = useState(false);
   const [availableMissions, setAvailableMissions] = useState<Order[]>([]);
@@ -220,6 +225,40 @@ export function AppProvider({ children }: { children: ReactNode }) {
       unsubscribe();
     };
   }, [authenticated, user.id]);
+
+  // Commandes réelles du commerçant : chargées uniquement pour un profil
+  // role='merchant' *relié* à un commerce (profiles.merchant_local_id,
+  // assigné manuellement par un admin — cf. migration 0007). Tant que ce
+  // lien n'existe pas, on n'affiche rien plutôt que d'inventer des données.
+  useEffect(() => {
+    if (!authenticated || !user.id || user.role !== "merchant" || !user.merchantLocalId) {
+      setMerchantOrders([]);
+      setMerchantOrdersLoading(false);
+      return;
+    }
+
+    let isMounted = true;
+    const merchantLocalId = user.merchantLocalId;
+    const merchantName =
+      merchants.find((entry) => entry.id === merchantLocalId)?.name ?? "Votre commerce";
+
+    const load = async () => {
+      setMerchantOrdersLoading(true);
+      const result = await orderService.fetchOrdersForMerchant(merchantLocalId, merchantName);
+      if (isMounted) setMerchantOrders(result);
+      setMerchantOrdersLoading(false);
+    };
+
+    load();
+    const unsubscribe = orderService.subscribeToMerchantOrders(merchantLocalId, () => {
+      void load();
+    });
+
+    return () => {
+      isMounted = false;
+      unsubscribe();
+    };
+  }, [authenticated, user.id, user.role, user.merchantLocalId]);
 
   // Données livreur réelles : chargées uniquement pour un profil dont le
   // rôle réel (Supabase) est 'driver'. Séparées de `orders` (client) — un
@@ -431,6 +470,28 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setOrders((current) =>
       current.map((item) => (item.id === orderId ? { ...item, status } : item)),
     );
+    notify(`Commande mise à jour : ${status.replace("_", " ")}.`, orderId);
+    return true;
+  };
+
+  // Côté commerçant — persistance réelle dans Supabase (contrairement à
+  // updateOrderStatus ci-dessus, qui ne touche que la copie locale des
+  // commandes du client). La policy RLS "orders merchant local update"
+  // (migration 0007) est la véritable barrière de sécurité ; canTransition
+  // évite ici un aller-retour réseau inutile quand ce n'est de toute façon
+  // pas une transition valide.
+  const updateMerchantOrderStatus = async (
+    orderId: string,
+    status: OrderStatus,
+  ): Promise<boolean> => {
+    const order = merchantOrders.find((item) => item.id === orderId);
+    if (!order || !orderService.canTransition(order.status, status)) return false;
+
+    const success = await orderService.updateOrderStatusAsMerchant(orderId, status);
+    if (!success) {
+      notify("Impossible de mettre à jour cette commande pour le moment.");
+      return false;
+    }
     notify(`Commande mise à jour : ${status.replace("_", " ")}.`, orderId);
     return true;
   };
@@ -656,6 +717,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     authLoading,
     orders,
     ordersLoading,
+    merchantOrders,
+    merchantOrdersLoading,
     driverOrders,
     driverOrdersLoading,
     availableMissions,
@@ -683,6 +746,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     clearCart,
     placeOrder,
     updateOrderStatus,
+    updateMerchantOrderStatus,
     confirmDelivery,
     acceptMission,
     advanceDriverOrderStatus,
