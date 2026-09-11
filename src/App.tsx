@@ -14,16 +14,26 @@ import { Login } from "./pages/Login";
 import { Orders } from "./pages/Orders";
 import { Profile } from "./pages/Profile";
 import { Checkout, MerchantDetail, ProductDetail } from "./pages/Details";
-import { DriverHistory, DriverHome, DriverMissions, MerchantDashboard } from "./pages/RolePages";
+import {
+  DriverHistory,
+  DriverHome,
+  DriverMissions,
+  MerchantDashboard,
+} from "./pages/RolePages";
 import { AdminDashboard } from "./pages/AdminDashboard";
 import { routerService } from "./services/routerService";
 import { merchants, products } from "./data";
 import type { Merchant, Page, Product, Role } from "./types";
+import { SplashScreen } from "./components/SplashScreen";
 
 function AppShell() {
   const [page, setPage] = useState<Page>("home");
-  const [selectedMerchant, setSelectedMerchant] = useState<Merchant | null>(null);
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [selectedMerchant, setSelectedMerchant] = useState<Merchant | null>(
+    null,
+  );
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(
+    null,
+  );
   const [checkout, setCheckout] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
 
@@ -44,12 +54,14 @@ function AppShell() {
   useEffect(() => {
     const handleHashChange = () => {
       const state = routerService.getCurrentState();
+
       if (state.checkout) {
         setCheckout(true);
         setSelectedProduct(null);
         setSelectedMerchant(null);
       } else if (state.merchantId) {
         const m = merchants.find((item) => item.id === state.merchantId);
+
         if (m) {
           setSelectedMerchant(m);
           setSelectedProduct(null);
@@ -59,6 +71,7 @@ function AppShell() {
         }
       } else if (state.productId) {
         const p = products.find((item) => item.id === state.productId);
+
         if (p) {
           setSelectedProduct(p);
           setSelectedMerchant(null);
@@ -76,43 +89,49 @@ function AppShell() {
 
     window.addEventListener("hashchange", handleHashChange);
     handleHashChange();
+
     return () => window.removeEventListener("hashchange", handleHashChange);
   }, []);
 
+  /*
+   * Splash Screen RUBIGO
+   *
+   * Tant que Supabase vérifie la session :
+   * - on affiche le Splash Screen ;
+   * - aucune page de l'application n'est rendue ;
+   * - la logique d'authentification existante reste inchangée.
+   */
   if (authLoading) {
-    return (
-      <div
-        style={{
-          display: "grid",
-          placeItems: "center",
-          minHeight: "100vh",
-          color: "var(--rubigo-text-muted)",
-          background: "var(--rubigo-background)",
-          fontFamily: "'Space Grotesk', sans-serif",
-          fontSize: 14,
-        }}
-      >
-        Chargement de votre session…
-      </div>
-    );
+    return <SplashScreen />;
   }
 
-  if (!authenticated) return <Login />;
+  if (!authenticated) {
+    return <Login />;
+  }
 
   const navigate = (nextPage: Page) => {
     routerService.navigate({ page: nextPage });
   };
 
   const openMerchant = (merchant: Merchant) => {
-    routerService.navigate({ page: "explore", merchantId: merchant.id });
+    routerService.navigate({
+      page: "explore",
+      merchantId: merchant.id,
+    });
   };
 
   const openProduct = (product: Product) => {
-    routerService.navigate({ page: "explore", productId: product.id });
+    routerService.navigate({
+      page: "explore",
+      productId: product.id,
+    });
   };
 
   const startCheckout = () => {
-    routerService.navigate({ page: "orders", checkout: true });
+    routerService.navigate({
+      page: "orders",
+      checkout: true,
+    });
   };
 
   const handleBack = () => {
@@ -132,27 +151,55 @@ function AppShell() {
         onProduct={openProduct}
       />
     ),
+
     explore: (
       <Explore
         onMerchant={openMerchant}
         onProduct={openProduct}
       />
     ),
+
     orders: <Orders />,
+
     favorites: <Favorites />,
+
     profile: <Profile onNavigate={navigate} />,
-    merchant: <MerchantDashboard onReturnToCustomer={returnToCustomer} />,
-    driver: <DriverHome onReturnToCustomer={returnToCustomer} />,
-    "driver-missions": <DriverMissions onReturnToCustomer={returnToCustomer} />,
-    "driver-history": <DriverHistory onReturnToCustomer={returnToCustomer} />,
-    admin: <AdminDashboard onReturnToCustomer={returnToCustomer} />,
+
+    merchant: (
+      <MerchantDashboard
+        onReturnToCustomer={returnToCustomer}
+      />
+    ),
+
+    driver: (
+      <DriverHome
+        onReturnToCustomer={returnToCustomer}
+      />
+    ),
+
+    "driver-missions": (
+      <DriverMissions
+        onReturnToCustomer={returnToCustomer}
+      />
+    ),
+
+    "driver-history": (
+      <DriverHistory
+        onReturnToCustomer={returnToCustomer}
+      />
+    ),
+
+    admin: (
+      <AdminDashboard
+        onReturnToCustomer={returnToCustomer}
+      />
+    ),
   };
 
-  // Un compte non-client est cantonné à ses propres pages (sécurité de
-  // navigation, pas de RLS ici — juste l'UI) : un livreur peut circuler
-  // entre Accueil/Missions/Historique/Profil, mais jamais atterrir sur le
-  // Home ou l'Explore du client. Par défaut (première visite, ou page hors
-  // périmètre), on retombe sur le tableau de bord du rôle.
+  /*
+   * Les comptes avec un rôle particulier restent cantonnés
+   * à leurs propres espaces.
+   */
   const roleDefaultPage: Partial<Record<Role, Page>> = {
     merchant: "merchant",
     driver: "driver",
@@ -160,17 +207,30 @@ function AppShell() {
   };
 
   const roleAllowedPages: Partial<Record<Role, Page[]>> = {
-    driver: ["driver", "driver-missions", "driver-history", "profile"],
-    merchant: ["merchant"],
-    admin: ["admin"],
+    driver: [
+      "driver",
+      "driver-missions",
+      "driver-history",
+      "profile",
+    ],
+
+    merchant: [
+      "merchant",
+    ],
+
+    admin: [
+      "admin",
+    ],
   };
 
   const rolePage =
     activeRole === "customer"
       ? page
-      : (roleAllowedPages[activeRole]?.includes(page)
-          ? page
-          : roleDefaultPage[activeRole]) ?? page;
+      : (
+          roleAllowedPages[activeRole]?.includes(page)
+            ? page
+            : roleDefaultPage[activeRole]
+        ) ?? page;
 
   const content = checkout ? (
     <Checkout
@@ -198,8 +258,19 @@ function AppShell() {
   const isAdmin = activeRole === "admin";
 
   return (
-    <div className={isAdmin ? "app-shell admin-app-shell" : "app-shell"}>
-      {!isAdmin ? <Sidebar page={rolePage} onNavigate={navigate} /> : null}
+    <div
+      className={
+        isAdmin
+          ? "app-shell admin-app-shell"
+          : "app-shell"
+      }
+    >
+      {!isAdmin ? (
+        <Sidebar
+          page={rolePage}
+          onNavigate={navigate}
+        />
+      ) : null}
 
       <main className="main-content">
         {!isAdmin ? (
@@ -208,7 +279,9 @@ function AppShell() {
             onNavigate={navigate}
             canNavigate={activeRole === "customer"}
             unreadCount={unreadNotifications}
-            onNotifications={() => setNotificationsOpen(!notificationsOpen)}
+            onNotifications={() =>
+              setNotificationsOpen(!notificationsOpen)
+            }
           />
         ) : null}
 
@@ -224,7 +297,9 @@ function AppShell() {
       </main>
 
       {!isAdmin && notificationsOpen ? (
-        <Notifications onClose={() => setNotificationsOpen(false)} />
+        <Notifications
+          onClose={() => setNotificationsOpen(false)}
+        />
       ) : null}
 
       <CartDrawer
@@ -235,8 +310,12 @@ function AppShell() {
 
       <CartConflictModal
         isOpen={Boolean(cartConflict)}
-        existingMerchantName={cartConflict?.existingMerchantName ?? ""}
-        newMerchantName={cartConflict?.newMerchantName ?? ""}
+        existingMerchantName={
+          cartConflict?.existingMerchantName ?? ""
+        }
+        newMerchantName={
+          cartConflict?.newMerchantName ?? ""
+        }
         onCancel={cancelCartReplacement}
         onConfirm={confirmCartReplacement}
       />
@@ -245,10 +324,17 @@ function AppShell() {
         <BottomNavigation
           page={rolePage}
           onNavigate={navigate}
-          cartCount={cart.reduce((sum, item) => sum + item.quantity, 0)}
+          cartCount={cart.reduce(
+            (sum, item) => sum + item.quantity,
+            0,
+          )}
         />
       ) : activeRole === "driver" ? (
-        <BottomNavigation page={rolePage} onNavigate={navigate} variant="driver" />
+        <BottomNavigation
+          page={rolePage}
+          onNavigate={navigate}
+          variant="driver"
+        />
       ) : null}
     </div>
   );
