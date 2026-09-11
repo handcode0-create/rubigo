@@ -26,4 +26,4 @@ export type OrderTracking = {
   estimatedDeliveryAt?: string
 }
 export type Order = { id: string; orderNumber?: string; customerId?: string; merchantId: string; merchantName: string; items: OrderItem[]; subtotal?: number; deliveryFee?: number; discount?: number; total: number; status: OrderStatus; paymentStatus?: PaymentStatus; date: string; createdAt?: string; deliveryAddress?: string; pickupLocation?: Location; deliveryLocation?: Location; distanceMeters?: number; estimatedDurationSeconds?: number; driverId?: string; driver?: { name: string; initials: string; eta?: string; currentLocation?: Location }; deliveryPin?: string; deliveryConfirmed?: boolean; tracking?: OrderTracking }
-export type User = { id?: string; name: string; phone: string; initials: string; city: string; email?: string; role?: Role; addresses?: Address[]; payment?: Payment }
+export type User = { id?: string; name: string; phone: string; initials: string; city: string; email?: string; role?: Role; merchantLocalId?: string; addresses?: Address[]; payment?: Payment }

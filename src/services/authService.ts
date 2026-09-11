@@ -16,6 +16,7 @@ export type ProfileRow = {
   city: string | null
   initials: string | null
   is_active: boolean
+  merchant_local_id: string | null
 }
 
 function computeInitials(name: string): string {
@@ -99,7 +100,7 @@ export const authService = {
   async ensureProfile(authUser: SupabaseUser): Promise<ProfileRow | null> {
     const { data: existing, error: fetchError } = await supabase
       .from('profiles')
-      .select('id, role, name, phone, city, initials, is_active')
+      .select('id, role, name, phone, city, initials, is_active, merchant_local_id')
       .eq('id', authUser.id)
       .maybeSingle()
 
@@ -119,7 +120,7 @@ export const authService = {
         phone,
         initials: computeInitials(name),
       })
-      .select('id, role, name, phone, city, initials, is_active')
+      .select('id, role, name, phone, city, initials, is_active, merchant_local_id')
       .maybeSingle()
 
     if (insertError || !created) return null
@@ -139,6 +140,7 @@ export const authService = {
       city: profile.city ?? '',
       email,
       role: profile.role,
+      merchantLocalId: profile.merchant_local_id ?? undefined,
       addresses: fallbackAddresses,
     }
   },
@@ -157,7 +159,7 @@ export const authService = {
         initials: computeInitials(updates.name),
       })
       .eq('id', userId)
-      .select('id, role, name, phone, city, initials, is_active')
+      .select('id, role, name, phone, city, initials, is_active, merchant_local_id')
       .maybeSingle()
 
     if (error || !data) return null

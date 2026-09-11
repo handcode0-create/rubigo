@@ -8,9 +8,153 @@ import { merchants } from '../data'
 import type { OrderStatus } from '../types'
 import './RolePages.css'
 
-const merchantId = 'merchant-002'
+export function MerchantDashboard({ onReturnToCustomer }: { onReturnToCustomer: () => void }) {
+  const { user, merchantOrders, merchantOrdersLoading, updateMerchantOrderStatus } = useApp()
+  const [actingId, setActingId] = useState<string | null>(null)
 
-export function MerchantDashboard({ onReturnToCustomer }: { onReturnToCustomer: () => void }) { const { activeRole, orders, updateOrderStatus } = useApp(); const merchantOrders = orders.filter((order) => order.merchantId === merchantId); const pending = merchantOrders.filter((order) => order.status === 'pending'); const revenue = merchantOrders.filter((order) => order.status === 'delivered').reduce((total, order) => total + (order.subtotal ?? order.total), 0); const action = (orderId: string, status: OrderStatus) => updateOrderStatus(orderId, status); return <div className="page-content role-page"><section className="page-heading"><p className="eyebrow">ESPACE COMMERÇANT · MODE DÉMO</p><h1>Bonjour, Le Patio 👋</h1><p>Gérez vos commandes en quelques gestes.</p></section><div className="role-switch"><strong>Compte actif : {activeRole}</strong><button onClick={onReturnToCustomer}>Revenir au client</button></div><div className="stats-grid"><div><span>Commandes aujourd’hui</span><strong>{merchantOrders.length}</strong></div><div><span>En attente</span><strong>{pending.length}</strong></div><div><span>Chiffre d’affaires</span><strong>{formatCurrency(revenue)}</strong></div></div><section className="section-block"><div className="section-heading"><div><p className="eyebrow">COMMANDES</p><h2>À traiter maintenant</h2></div></div><div className="order-list">{merchantOrders.length ? merchantOrders.map((order) => <div key={order.id} className="workflow-card"><OrderCard order={order} onOpen={() => undefined} /><div className="workflow-actions">{order.status === 'pending' ? <><button onClick={() => action(order.id, 'accepted')}>Accepter</button><button className="danger-action" onClick={() => action(order.id, 'merchant_rejected')}>Refuser</button></> : null}{order.status === 'accepted' ? <button onClick={() => action(order.id, 'preparing')}>Commencer préparation</button> : null}{order.status === 'preparing' ? <button onClick={() => action(order.id, 'ready')}>Commande prête</button> : null}</div></div>) : <div className="empty-state"><span>✓</span><strong>Aucune commande</strong><p>Les nouvelles commandes apparaîtront ici.</p></div>}</div></section></div> }
+  const action = async (orderId: string, status: OrderStatus) => {
+    setActingId(orderId)
+    await updateMerchantOrderStatus(orderId, status)
+    setActingId(null)
+  }
+
+  // Compte marchand pas encore relié à un commerce : le lien
+  // (profiles.merchant_local_id) est assigné manuellement par un admin,
+  // jamais choisi par le marchand lui-même (cf. migration 0007).
+  if (!user.merchantLocalId) {
+    return (
+      <div className="page-content role-page">
+        <section className="page-heading">
+          <p className="eyebrow">ESPACE COMMERÇANT</p>
+          <h1>Compte non relié à un commerce</h1>
+          <p>Votre compte a le rôle marchand, mais n'est pas encore associé à un commerce RUBIGO. Contactez le support pour finaliser la mise en place.</p>
+        </section>
+        <div className="role-switch">
+          <button onClick={onReturnToCustomer}>Revenir au client</button>
+        </div>
+      </div>
+    )
+  }
+
+  const pending = merchantOrders.filter((order) => order.status === 'pending')
+  const active = merchantOrders.filter((order) =>
+    ['accepted', 'preparing', 'ready'].includes(order.status),
+  )
+  const withDriver = merchantOrders.filter((order) =>
+    ['driver_assigned', 'picked_up', 'delivering'].includes(order.status),
+  )
+  const revenue = merchantOrders
+    .filter((order) => order.status === 'delivered')
+    .reduce((total, order) => total + (order.subtotal ?? order.total), 0)
+
+  return (
+    <div className="page-content role-page">
+      <section className="page-heading">
+        <p className="eyebrow">ESPACE COMMERÇANT</p>
+        <h1>Bonjour, {user.name.split(' ')[0]} 👋</h1>
+        <p>Gérez vos commandes en quelques gestes.</p>
+      </section>
+
+      <div className="role-switch">
+        <strong>Compte marchand</strong>
+        <button onClick={onReturnToCustomer}>Revenir au client</button>
+      </div>
+
+      <div className="stats-grid">
+        <div><span>Commandes</span><strong>{merchantOrders.length}</strong></div>
+        <div><span>En attente</span><strong>{pending.length}</strong></div>
+        <div><span>Chiffre d'affaires</span><strong>{formatCurrency(revenue)}</strong></div>
+      </div>
+
+      <section className="section-block">
+        <div className="section-heading">
+          <div>
+            <p className="eyebrow">COMMANDES</p>
+            <h2>À traiter maintenant</h2>
+          </div>
+        </div>
+
+        {merchantOrdersLoading ? (
+          <div className="empty-state">
+            <span>⌖</span>
+            <strong>Chargement…</strong>
+          </div>
+        ) : null}
+
+        <div className="order-list">
+          {[...pending, ...active].length ? (
+            [...pending, ...active].map((order) => (
+              <div key={order.id} className="workflow-card">
+                <OrderCard order={order} onOpen={() => undefined} />
+                <div className="workflow-actions">
+                  {order.status === 'pending' ? (
+                    <>
+                      <button
+                        onClick={() => action(order.id, 'accepted')}
+                        disabled={actingId === order.id}
+                      >
+                        Accepter
+                      </button>
+                      <button
+                        className="danger-action"
+                        onClick={() => action(order.id, 'merchant_rejected')}
+                        disabled={actingId === order.id}
+                      >
+                        Refuser
+                      </button>
+                    </>
+                  ) : null}
+                  {order.status === 'accepted' ? (
+                    <button onClick={() => action(order.id, 'preparing')} disabled={actingId === order.id}>
+                      Commencer préparation
+                    </button>
+                  ) : null}
+                  {order.status === 'preparing' ? (
+                    <button onClick={() => action(order.id, 'ready')} disabled={actingId === order.id}>
+                      Commande prête
+                    </button>
+                  ) : null}
+                  {order.status === 'ready' ? (
+                    <span className="muted">En attente d'un livreur…</span>
+                  ) : null}
+                </div>
+              </div>
+            ))
+          ) : !merchantOrdersLoading ? (
+            <div className="empty-state">
+              <span>✓</span>
+              <strong>Aucune commande</strong>
+              <p>Les nouvelles commandes apparaîtront ici.</p>
+            </div>
+          ) : null}
+        </div>
+      </section>
+
+      {withDriver.length ? (
+        <section className="section-block">
+          <div className="section-heading">
+            <div>
+              <p className="eyebrow">EN LIVRAISON</p>
+              <h2>Prises en charge par un livreur</h2>
+            </div>
+          </div>
+          <div className="order-list">
+            {withDriver.map((order) => (
+              <div key={order.id} className="workflow-card">
+                <OrderCard order={order} onOpen={() => undefined} />
+                <div className="workflow-actions">
+                  <span className="muted">
+                    Livreur : {order.driver?.name ?? 'assigné, en attente de récupération'}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      ) : null}
+    </div>
+  )
+}
 
 function useDriverGuard(user: { role?: string }) {
   return user.role === 'driver'
