@@ -242,13 +242,19 @@ export const orderService = {
   // "orders customer cancel" refuse déjà toute annulation hors des statuts
   // pending/accepted côté base — canTransition fait le même contrôle côté
   // UI pour ne proposer le bouton que quand c'est pertinent.
+  // IMPORTANT : Supabase ne renvoie PAS d'erreur quand une policy RLS
+  // bloque silencieusement une UPDATE (0 ligne affectée, pas d'exception).
+  // On vérifie donc explicitement qu'une ligne a bien été modifiée via
+  // .select().maybeSingle() plutôt que de se fier seulement à `error`.
   async cancelOrder(orderId: string): Promise<boolean> {
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from('orders')
       .update({ status: 'cancelled', cancelled_at: new Date().toISOString() })
       .eq('id', orderId)
+      .select('id')
+      .maybeSingle()
 
-    return !error
+    return !error && !!data
   },
 
   subscribeToCustomerOrders(customerId: string, onChange: () => void): () => void {
@@ -321,18 +327,22 @@ export const orderService = {
   // Transitions "normales" (pas de PIN requis) : récupéré, en livraison...
   // Autorisées par la policy RLS "orders participants update", qui bloque
   // explicitement toute tentative de passer directement à 'delivered'.
+  // Même vigilance que cancelOrder : on vérifie qu'une ligne a réellement
+  // été modifiée, pas seulement l'absence d'erreur.
   async advanceOrderStatus(orderId: string, status: OrderStatus): Promise<boolean> {
     const timestampColumn: Partial<Record<OrderStatus, string>> = {
       picked_up: 'picked_up_at',
       delivering: 'out_for_delivery_at',
     }
     const column = timestampColumn[status]
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from('orders')
       .update({ status, ...(column ? { [column]: new Date().toISOString() } : {}) })
       .eq('id', orderId)
+      .select('id')
+      .maybeSingle()
 
-    return !error
+    return !error && !!data
   },
 
   // Confirmation de livraison par PIN — jamais un simple update de statut.
