@@ -3,6 +3,9 @@
 -- explicitement remplacée (drop + create) pour combler une faille réelle :
 -- un livreur pouvait jusqu'ici mettre status='delivered' par une simple
 -- UPDATE directe, sans jamais passer par la vérification du PIN.
+--
+-- IDEMPOTENT : ce fichier peut être exécuté plusieurs fois sans erreur,
+-- même si une partie a déjà été appliquée lors d'une tentative précédente.
 -- À exécuter dans Supabase Dashboard > SQL Editor.
 
 -- ==========================================================================
@@ -13,7 +16,7 @@
 -- la fonction sécurisée confirm_delivery() (SECURITY DEFINER, ci-dessous)
 -- peut la lire/modifier, en plus du client propriétaire de la commande qui
 -- peut voir SON code pour le communiquer oralement au livreur.
-create table public.order_pins (
+create table if not exists public.order_pins (
   order_id uuid primary key references public.orders(id) on delete cascade,
   pin text not null,
   pin_hash text not null,
@@ -25,6 +28,7 @@ create table public.order_pins (
 
 alter table public.order_pins enable row level security;
 
+drop policy if exists "order pin customer read" on public.order_pins;
 create policy "order pin customer read" on public.order_pins
   for select
   using (exists (select 1 from public.orders where id = order_id and customer_id = auth.uid()));
@@ -33,8 +37,8 @@ create policy "order pin customer read" on public.order_pins
 -- 2) COLONNES DE PREUVE DE LIVRAISON
 -- ==========================================================================
 alter table public.orders
-  add column delivery_confirmed boolean not null default false,
-  add column delivered_by uuid references public.profiles(id);
+  add column if not exists delivery_confirmed boolean not null default false,
+  add column if not exists delivered_by uuid references public.profiles(id);
 
 -- L'ancienne colonne orders.delivery_pin (créée avant cette migration) est
 -- dépréciée : elle était lisible par le livreur via "orders participants
@@ -56,11 +60,13 @@ declare
 begin
   v_pin := lpad(floor(random() * 10000)::text, 4, '0');
   insert into public.order_pins (order_id, pin, pin_hash)
-  values (new.id, v_pin, crypt(v_pin, gen_salt('bf')));
+  values (new.id, v_pin, crypt(v_pin, gen_salt('bf')))
+  on conflict (order_id) do nothing;
   return new;
 end;
 $$;
 
+drop trigger if exists trg_generate_order_pin on public.orders;
 create trigger trg_generate_order_pin
   after insert on public.orders
   for each row execute function public.generate_order_pin();
@@ -139,6 +145,7 @@ grant execute on function public.confirm_delivery(uuid, text) to authenticated;
 -- ==========================================================================
 -- Un livreur (role='driver') peut voir les commandes prêtes et non encore
 -- assignées : ce sont les "missions disponibles".
+drop policy if exists "orders visible as available mission" on public.orders;
 create policy "orders visible as available mission" on public.orders
   for select
   using (

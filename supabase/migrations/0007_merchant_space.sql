@@ -1,6 +1,9 @@
 -- RUBIGO — migration 0007 : espace commerçant réel
 -- Additif uniquement : ne modifie aucune colonne/policy existante des
 -- migrations précédentes (0002 à 0006 restent inchangées).
+--
+-- IDEMPOTENT : ce fichier peut être exécuté plusieurs fois sans erreur,
+-- même si une partie a déjà été appliquée lors d'une tentative précédente.
 -- À exécuter dans Supabase Dashboard > SQL Editor.
 
 -- ==========================================================================
@@ -14,7 +17,7 @@
 -- marchand lui-même (aucune policy d'update ne l'autorise) : seule une
 -- affectation manuelle (SQL Editor ou futur dashboard admin) peut la fixer.
 alter table public.profiles
-  add column merchant_local_id text;
+  add column if not exists merchant_local_id text;
 
 -- ==========================================================================
 -- 2) LECTURE DES COMMANDES PAR LE MARCHAND PROPRIÉTAIRE
@@ -22,6 +25,7 @@ alter table public.profiles
 -- Additive : vient s'ajouter à "orders participants read" (0001/0004), qui
 -- reste inchangée et ne matche jamais tant que orders.merchant_id (UUID)
 -- n'est pas renseigné.
+drop policy if exists "orders merchant local read" on public.orders;
 create policy "orders merchant local read" on public.orders
   for select
   using (
@@ -34,6 +38,7 @@ create policy "orders merchant local read" on public.orders
     )
   );
 
+drop policy if exists "order items merchant local read" on public.order_items;
 create policy "order items merchant local read" on public.order_items
   for select
   using (
@@ -55,6 +60,7 @@ create policy "order items merchant local read" on public.order_items
 -- de "ready", la main passe au livreur (accept_delivery_mission / statuts
 -- suivants), jamais à une simple UPDATE marchand. Il ne peut jamais écrire
 -- 'driver_assigned' ou 'delivered' lui-même.
+drop policy if exists "orders merchant local update" on public.orders;
 create policy "orders merchant local update" on public.orders
   for update
   using (
@@ -83,6 +89,7 @@ create policy "orders merchant local update" on public.orders
 -- ==========================================================================
 -- Même principe que "profiles readable by order customer" (0004), côté
 -- marchand cette fois.
+drop policy if exists "profiles readable by order merchant" on public.profiles;
 create policy "profiles readable by order merchant" on public.profiles
   for select
   using (
