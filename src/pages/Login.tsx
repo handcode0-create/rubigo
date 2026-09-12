@@ -1,6 +1,5 @@
 import { useState, type FormEvent } from 'react'
 import { useApp } from '../context/AppContext'
-import { LoginRiderIllustration } from '../components/LoginRiderIllustration'
 import './Login.css'
 
 type Mode = 'login' | 'register'
@@ -129,8 +128,12 @@ export function Login() {
           <b>LOCAL DELIVERY</b>
         </span>
 
-        <div className="login-art-glow" aria-hidden="true" />
-        <LoginRiderIllustration className="login-art-illustration" aria-hidden="true" />
+        <img
+          src="/login-rider.jpg"
+          alt="Livreur RUBIGO sur la route"
+          className="login-art-photo"
+        />
+        <div className="login-art-photo-scrim" aria-hidden="true" />
       </section>
 
       <section className="login-form-wrap">
