@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Bell,
   BookOpen,
@@ -8,6 +8,8 @@ import {
   Home,
   Loader2,
   Package,
+  Pencil,
+  Plus,
   Search,
   Settings,
   ShoppingBag,
@@ -20,17 +22,34 @@ import {
   Trash2,
   LogOut,
   WalletCards,
-  SlidersHorizontal,
 } from "lucide-react";
-import { merchants, products } from "../data";
+import { merchants } from "../data";
 import { useApp } from "../context/AppContext";
 import { orderService } from "../services/orderService";
-import type { Order, OrderStatus } from "../types";
+import { merchantService } from "../services/merchantService";
+import type { Order, OrderStatus, Product } from "../types";
 import { formatCurrency } from "../utils/formatCurrency";
 import "./MerchantDashboard.css";
 
 type MerchantTab = "home" | "orders" | "catalog" | "account";
 type Filter = "all" | "pending" | "active" | "history";
+type CatalogFilter = "all" | "available" | "unavailable";
+
+type ProductFormState = {
+  name: string;
+  description: string;
+  price: string;
+  category: string;
+  available: boolean;
+};
+
+const EMPTY_PRODUCT_FORM: ProductFormState = {
+  name: "",
+  description: "",
+  price: "",
+  category: "",
+  available: true,
+};
 
 type AvailableDriver = {
   id: string;
@@ -136,8 +155,204 @@ export function MerchantDashboard({
   const [settingsSaving, setSettingsSaving] = useState(false);
   const [settingsMessage, setSettingsMessage] = useState("");
 
+  const [catalog, setCatalog] = useState<Product[]>([]);
+  const [catalogLoading, setCatalogLoading] = useState(true);
+  const [catalogQuery, setCatalogQuery] = useState("");
+  const [catalogFilter, setCatalogFilter] = useState<CatalogFilter>("all");
+
+  const [productModalOpen, setProductModalOpen] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [productForm, setProductForm] = useState<ProductFormState>(EMPTY_PRODUCT_FORM);
+  const [productFormError, setProductFormError] = useState("");
+  const [savingProduct, setSavingProduct] = useState(false);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | undefined>(undefined);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [togglingId, setTogglingId] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Product | null>(null);
+  const [deletingProduct, setDeletingProduct] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const merchantLocalId = user.merchantLocalId;
+
+  useEffect(() => {
+    if (!merchantLocalId) {
+      setCatalog([]);
+      setCatalogLoading(false);
+      return;
+    }
+    let isMounted = true;
+    setCatalogLoading(true);
+    merchantService.fetchMerchantProducts(merchantLocalId).then((result) => {
+      if (isMounted) {
+        setCatalog(result);
+        setCatalogLoading(false);
+      }
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, [merchantLocalId]);
+
+  const visibleCatalog = catalog
+    .filter((product) =>
+      catalogFilter === "all"
+        ? true
+        : catalogFilter === "available"
+          ? product.available
+          : !product.available,
+    )
+    .filter((product) =>
+      catalogQuery.trim()
+        ? product.name.toLowerCase().includes(catalogQuery.trim().toLowerCase())
+        : true,
+    );
+
+  const openAddProduct = () => {
+    setEditingProduct(null);
+    setProductForm(EMPTY_PRODUCT_FORM);
+    setProductFormError("");
+    setImageFile(null);
+    setImagePreview(undefined);
+    setProductModalOpen(true);
+  };
+
+  const openEditProduct = (product: Product) => {
+    setEditingProduct(product);
+    setProductForm({
+      name: product.name,
+      description: product.description,
+      price: String(product.price),
+      category: product.category,
+      available: product.available,
+    });
+    setProductFormError("");
+    setImageFile(null);
+    setImagePreview(product.image);
+    setProductModalOpen(true);
+  };
+
+  const closeProductModal = () => {
+    if (savingProduct || uploadingImage) return;
+    setProductModalOpen(false);
+  };
+
+  const handleImagePick = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      setProductFormError("Image trop lourde (5 Mo maximum).");
+      return;
+    }
+    if (!file.type.startsWith("image/")) {
+      setProductFormError("Format d'image non pris en charge.");
+      return;
+    }
+    setProductFormError("");
+    setImageFile(file);
+    setImagePreview(URL.createObjectURL(file));
+  };
+
+  const removeImagePreview = async () => {
+    if (editingProduct?.image) {
+      const path = editingProduct.image.split(`/product-images/`)[1];
+      if (path) await merchantService.deleteMerchantProductImage(editingProduct.id, path);
+    }
+    setImageFile(null);
+    setImagePreview(undefined);
+  };
+
+  const saveProduct = async () => {
+    const name = productForm.name.trim();
+    const priceValue = Number(productForm.price);
+
+    if (!name) {
+      setProductFormError("Le nom du produit est obligatoire.");
+      return;
+    }
+    if (!Number.isFinite(priceValue) || priceValue <= 0) {
+      setProductFormError("Le prix doit être supérieur à 0.");
+      return;
+    }
+    if (!merchantLocalId) {
+      setProductFormError("Compte commerçant introuvable.");
+      return;
+    }
+
+    setSavingProduct(true);
+    setProductFormError("");
+
+    const payload = {
+      name,
+      description: productForm.description.trim(),
+      price: Math.round(priceValue),
+      category: productForm.category.trim(),
+      available: productForm.available,
+    };
+
+    const result = editingProduct
+      ? await merchantService.updateMerchantProduct(editingProduct.id, payload)
+      : await merchantService.createMerchantProduct(merchantLocalId, payload);
+
+    if (!result.product) {
+      setSavingProduct(false);
+      setProductFormError(
+        result.error ?? (editingProduct ? "Impossible de modifier le produit." : "Impossible d'ajouter le produit."),
+      );
+      return;
+    }
+
+    let finalProduct = result.product;
+
+    if (imageFile) {
+      setUploadingImage(true);
+      const uploadResult = await merchantService.uploadMerchantProductImage(
+        merchantLocalId,
+        finalProduct.id,
+        imageFile,
+      );
+      setUploadingImage(false);
+      if (uploadResult.error) {
+        setProductFormError(uploadResult.error);
+      } else if (uploadResult.imageUrl) {
+        finalProduct = { ...finalProduct, image: uploadResult.imageUrl };
+      }
+    }
+
+    setCatalog((current) => {
+      const exists = current.some((item) => item.id === finalProduct.id);
+      return exists
+        ? current.map((item) => (item.id === finalProduct.id ? finalProduct : item))
+        : [finalProduct, ...current];
+    });
+
+    setSavingProduct(false);
+    setProductModalOpen(false);
+  };
+
+  const toggleAvailability = async (product: Product) => {
+    setTogglingId(product.id);
+    const result = await merchantService.toggleMerchantProductAvailability(product.id, !product.available);
+    setTogglingId(null);
+    if (result.product) {
+      setCatalog((current) =>
+        current.map((item) => (item.id === product.id ? result.product! : item)),
+      );
+    }
+  };
+
+  const confirmDeleteProduct = async () => {
+    if (!deleteTarget) return;
+    setDeletingProduct(true);
+    const success = await merchantService.deleteMerchantProduct(deleteTarget.id);
+    setDeletingProduct(false);
+    if (success) {
+      setCatalog((current) => current.filter((item) => item.id !== deleteTarget.id));
+      setDeleteTarget(null);
+    }
+  };
+
   const merchant = merchants.find((m) => m.id === user.merchantLocalId);
-  const catalog = products.filter((p) => p.merchantId === user.merchantLocalId);
 
   const pending = merchantOrders.filter((o) => o.status === "pending");
   const active = merchantOrders.filter((o) => ACTIVE.includes(o.status));
@@ -668,34 +883,101 @@ export function MerchantDashboard({
                 <span className="merchant-kicker">CATALOGUE</span>
                 <h2>{catalog.length} produits</h2>
               </div>
-              <SlidersHorizontal size={20} />
+              <button type="button" className="catalog-add-button" onClick={openAddProduct}>
+                <Plus size={16} />
+                <span>Ajouter</span>
+              </button>
             </section>
-            <div className="catalog-grid">
-              {catalog.map((product) => (
-                <article key={product.id} className="catalog-card">
-                  <div className="catalog-image">
-                    {product.image ? (
-                      <img src={product.image} alt={product.name} />
-                    ) : (
-                      <ShoppingBag size={24} />
-                    )}
-                    <span
-                      className={
-                        product.available ? "available" : "unavailable"
-                      }
-                    >
-                      {product.available ? "Disponible" : "Indisponible"}
-                    </span>
-                  </div>
-                  <div className="catalog-copy">
-                    <small>{product.category}</small>
-                    <h3>{product.name}</h3>
-                    <p>{product.description}</p>
-                    <strong>{formatCurrency(product.price)}</strong>
-                  </div>
-                </article>
-              ))}
+
+            <div className="catalog-toolbar">
+              <div className="catalog-search">
+                <Search size={16} />
+                <input
+                  value={catalogQuery}
+                  onChange={(event) => setCatalogQuery(event.target.value)}
+                  placeholder="Rechercher un produit"
+                />
+              </div>
+              <div className="catalog-filter-chips">
+                {(
+                  [
+                    ["all", "Tous"],
+                    ["available", "Disponibles"],
+                    ["unavailable", "Indisponibles"],
+                  ] as [CatalogFilter, string][]
+                ).map(([value, label]) => (
+                  <button
+                    key={value}
+                    type="button"
+                    className={catalogFilter === value ? "active" : ""}
+                    onClick={() => setCatalogFilter(value)}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
             </div>
+
+            {catalogLoading ? (
+              <div className="catalog-empty">
+                <Loader2 size={20} className="spin" />
+                <strong>Chargement du catalogue…</strong>
+              </div>
+            ) : !merchantLocalId ? (
+              <div className="catalog-empty">
+                <ShoppingBag size={22} />
+                <strong>Compte commerçant non lié</strong>
+                <p>Aucun commerce n'est associé à ce compte.</p>
+              </div>
+            ) : visibleCatalog.length ? (
+              <div className="catalog-grid">
+                {visibleCatalog.map((product) => (
+                  <article key={product.id} className="catalog-card">
+                    <div className="catalog-image">
+                      {product.image ? (
+                        <img src={product.image} alt={product.name} />
+                      ) : (
+                        <ShoppingBag size={24} />
+                      )}
+                      <button
+                        type="button"
+                        className={`availability-toggle ${product.available ? "available" : "unavailable"}`}
+                        onClick={() => toggleAvailability(product)}
+                        disabled={togglingId === product.id}
+                      >
+                        {togglingId === product.id
+                          ? "…"
+                          : product.available
+                            ? "Disponible"
+                            : "Indisponible"}
+                      </button>
+                    </div>
+                    <div className="catalog-copy">
+                      {product.category ? <small>{product.category}</small> : null}
+                      <h3>{product.name}</h3>
+                      <p>{product.description}</p>
+                      <strong>{formatCurrency(product.price)}</strong>
+                    </div>
+                    <div className="catalog-card-actions">
+                      <button type="button" onClick={() => openEditProduct(product)}>
+                        <Pencil size={14} />
+                        <span>Modifier</span>
+                      </button>
+                      <button type="button" className="danger" onClick={() => setDeleteTarget(product)}>
+                        <Trash2 size={14} />
+                        <span>Supprimer</span>
+                      </button>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            ) : (
+              <div className="catalog-empty">
+                <ShoppingBag size={22} />
+                <strong>Aucun produit</strong>
+                <p>Ajoutez votre premier produit pour commencer.</p>
+              </div>
+            )}
           </section>
         )}
 
@@ -1071,6 +1353,167 @@ export function MerchantDashboard({
                   : nextAction(selected.status)!.label}
               </button>
             ) : null}
+          </section>
+        </div>
+      ) : null}
+
+      {productModalOpen ? (
+        <div className="modal-overlay" onClick={closeProductModal}>
+          <section className="modal-sheet product-form-modal" onClick={(event) => event.stopPropagation()}>
+            <header>
+              <div>
+                <span className="merchant-kicker">
+                  {editingProduct ? "MODIFIER" : "AJOUTER"}
+                </span>
+                <h2>{editingProduct ? "Modifier le produit" : "Nouveau produit"}</h2>
+              </div>
+              <button className="modal-close" onClick={closeProductModal} aria-label="Fermer">
+                <X size={18} />
+              </button>
+            </header>
+
+            <div className="product-form-image">
+              {imagePreview ? (
+                <img src={imagePreview} alt="" />
+              ) : (
+                <div className="product-form-image-placeholder">
+                  <ShoppingBag size={26} />
+                </div>
+              )}
+              <div className="product-form-image-actions">
+                <button type="button" onClick={() => fileInputRef.current?.click()} disabled={uploadingImage}>
+                  {imagePreview ? "Remplacer l'image" : "Ajouter une image"}
+                </button>
+                {imagePreview ? (
+                  <button type="button" className="danger" onClick={removeImagePreview} disabled={uploadingImage}>
+                    Supprimer l'image
+                  </button>
+                ) : null}
+              </div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                hidden
+                onChange={handleImagePick}
+              />
+            </div>
+
+            <label className="product-form-field">
+              Nom du produit *
+              <input
+                value={productForm.name}
+                onChange={(event) => setProductForm((current) => ({ ...current, name: event.target.value }))}
+                placeholder="Ex. Riz sauce graine"
+                disabled={savingProduct}
+              />
+            </label>
+
+            <label className="product-form-field">
+              Description *
+              <textarea
+                value={productForm.description}
+                onChange={(event) =>
+                  setProductForm((current) => ({ ...current, description: event.target.value }))
+                }
+                placeholder="Décrivez le produit"
+                rows={3}
+                disabled={savingProduct}
+              />
+            </label>
+
+            <div className="product-form-row">
+              <label className="product-form-field">
+                Prix (FCFA) *
+                <input
+                  type="number"
+                  min={0}
+                  value={productForm.price}
+                  onChange={(event) => setProductForm((current) => ({ ...current, price: event.target.value }))}
+                  placeholder="0"
+                  disabled={savingProduct}
+                />
+              </label>
+
+              <label className="product-form-field">
+                Catégorie
+                <input
+                  value={productForm.category}
+                  onChange={(event) =>
+                    setProductForm((current) => ({ ...current, category: event.target.value }))
+                  }
+                  placeholder="Ex. Plats, Boissons"
+                  disabled={savingProduct}
+                />
+              </label>
+            </div>
+
+            <label className="product-form-availability">
+              <span>Disponibilité</span>
+              <button
+                type="button"
+                className={`availability-switch ${productForm.available ? "on" : "off"}`}
+                onClick={() =>
+                  setProductForm((current) => ({ ...current, available: !current.available }))
+                }
+                disabled={savingProduct}
+              >
+                <span className="availability-switch-dot" />
+                {productForm.available ? "Disponible" : "Indisponible"}
+              </button>
+            </label>
+
+            {productFormError ? <div className="merchant-error modal-error">{productFormError}</div> : null}
+
+            <div className="product-form-actions">
+              <button type="button" onClick={closeProductModal} disabled={savingProduct}>
+                Annuler
+              </button>
+              <button
+                type="button"
+                className="modal-primary"
+                onClick={saveProduct}
+                disabled={savingProduct || uploadingImage}
+              >
+                {savingProduct || uploadingImage ? (
+                  <Loader2 className="spin" size={15} />
+                ) : null}
+                {uploadingImage
+                  ? "Envoi de l'image…"
+                  : savingProduct
+                    ? editingProduct
+                      ? "Enregistrement…"
+                      : "Ajout en cours…"
+                    : editingProduct
+                      ? "Enregistrer les modifications"
+                      : "Ajouter le produit"}
+              </button>
+            </div>
+          </section>
+        </div>
+      ) : null}
+
+      {deleteTarget ? (
+        <div className="modal-overlay" onClick={() => (deletingProduct ? null : setDeleteTarget(null))}>
+          <section className="modal-sheet confirm-sheet" onClick={(event) => event.stopPropagation()}>
+            <h2>Supprimer ce produit ?</h2>
+            <p>
+              « {deleteTarget.name} » sera définitivement supprimé de votre catalogue.
+            </p>
+            <div className="product-form-actions">
+              <button type="button" onClick={() => setDeleteTarget(null)} disabled={deletingProduct}>
+                Annuler
+              </button>
+              <button
+                type="button"
+                className="modal-primary danger"
+                onClick={confirmDeleteProduct}
+                disabled={deletingProduct}
+              >
+                {deletingProduct ? <Loader2 className="spin" size={15} /> : <Trash2 size={15} />}
+                {deletingProduct ? "Suppression…" : "Supprimer"}
+              </button>
+            </div>
           </section>
         </div>
       ) : null}
