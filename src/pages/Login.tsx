@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { useApp } from '../context/AppContext'
+import { LoginRiderIllustration } from '../components/LoginRiderIllustration'
 import './Login.css'
 
 type Mode = 'login' | 'register'
@@ -127,6 +128,8 @@ export function Login() {
           <br />
           <b>LOCAL DELIVERY</b>
         </span>
+
+        <LoginRiderIllustration className="login-art-illustration" aria-hidden="true" />
       </section>
 
       <section className="login-form-wrap">
