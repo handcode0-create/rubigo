@@ -12,7 +12,7 @@
   overflow: hidden;
   padding: 42px 48px;
   color: #fff;
-  background: var(--rubigo-primary);
+  background: linear-gradient(165deg, #0f5132 0%, var(--rubigo-primary) 62%, #1a9950 100%);
 }
 .login-brand {
   display: flex;
@@ -42,6 +42,17 @@
   font-size: 14px;
   line-height: 1.6;
 }
+.login-art-glow {
+  position: absolute;
+  right: -10%;
+  bottom: -12%;
+  width: 70%;
+  aspect-ratio: 1;
+  background: radial-gradient(circle, rgba(214, 232, 106, 0.35) 0%, rgba(214, 232, 106, 0) 70%);
+  z-index: 0;
+  pointer-events: none;
+}
+
 .login-art-illustration {
   position: absolute;
   left: 0;
@@ -51,6 +62,7 @@
   height: auto;
   z-index: 0;
   pointer-events: none;
+  filter: drop-shadow(0 18px 30px rgba(0, 0, 0, 0.35)) drop-shadow(0 2px 0 rgba(0, 0, 0, 0.12));
 }
 
 .login-art-stamp {
@@ -181,7 +193,7 @@
     display: block;
   }
   .login-art {
-    min-height: 260px;
+    min-height: 430px;
     padding: 28px 22px;
   }
   .login-art-copy {
@@ -206,7 +218,7 @@
     font-size: 8px;
   }
   .login-art-illustration {
-    opacity: 0.9;
+    opacity: 0.95;
   }
   .login-form-wrap {
     padding: 34px 22px 40px;

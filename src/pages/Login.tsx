@@ -129,6 +129,7 @@ export function Login() {
           <b>LOCAL DELIVERY</b>
         </span>
 
+        <div className="login-art-glow" aria-hidden="true" />
         <LoginRiderIllustration className="login-art-illustration" aria-hidden="true" />
       </section>
 
