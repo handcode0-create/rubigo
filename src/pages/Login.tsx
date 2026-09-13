@@ -120,6 +120,18 @@ export function Login() {
             Commandez auprès de vos commerces préférés.
             RUBIGO s’occupe du reste.
           </p>
+
+          <button
+            type="button"
+            className="login-art-cta"
+            onClick={() => {
+              document.getElementById('login-email')?.focus()
+              document.getElementById('login-email')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+            }}
+          >
+            <span>Commencer</span>
+            <b>→</b>
+          </button>
         </div>
 
         <span className="login-art-stamp">
@@ -153,6 +165,7 @@ export function Login() {
               <label>
                 Email
                 <input
+                  id="login-email"
                   type="email"
                   value={email}
                   onChange={(event) => setEmail(event.target.value)}
