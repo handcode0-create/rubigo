@@ -1,174 +1,107 @@
 import { useMemo, useState } from 'react'
+import {
+  ArrowRightCircle,
+  Clock3,
+  MapPin,
+  Package,
+  ShieldCheck,
+  Wallet2,
+} from 'lucide-react'
 import { OrderCard } from '../components/Cards'
 import { useApp } from '../context/AppContext'
 import { useUserLocation } from '../hooks/useUserLocation'
 import { calculateDistanceMeters, calculateDriverEarnings } from '../utils/pricingUtils'
 import { formatCurrency } from '../utils/formatCurrency'
 import { merchants } from '../data'
-import type { OrderStatus } from '../types'
+import type { Order } from '../types'
 import './RolePages.css'
-
-export function MerchantDashboard({ onReturnToCustomer }: { onReturnToCustomer: () => void }) {
-  const { user, merchantOrders, merchantOrdersLoading, updateMerchantOrderStatus } = useApp()
-  const [actingId, setActingId] = useState<string | null>(null)
-
-  const action = async (orderId: string, status: OrderStatus) => {
-    setActingId(orderId)
-    await updateMerchantOrderStatus(orderId, status)
-    setActingId(null)
-  }
-
-  // Compte marchand pas encore relié à un commerce : le lien
-  // (profiles.merchant_local_id) est assigné manuellement par un admin,
-  // jamais choisi par le marchand lui-même (cf. migration 0007).
-  if (!user.merchantLocalId) {
-    return (
-      <div className="page-content role-page">
-        <section className="page-heading">
-          <p className="eyebrow">ESPACE COMMERÇANT</p>
-          <h1>Compte non relié à un commerce</h1>
-          <p>Votre compte a le rôle marchand, mais n'est pas encore associé à un commerce RUBIGO. Contactez le support pour finaliser la mise en place.</p>
-        </section>
-        <div className="role-switch">
-          <button onClick={onReturnToCustomer}>Revenir au client</button>
-        </div>
-      </div>
-    )
-  }
-
-  const pending = merchantOrders.filter((order) => order.status === 'pending')
-  const active = merchantOrders.filter((order) =>
-    ['accepted', 'preparing', 'ready'].includes(order.status),
-  )
-  const withDriver = merchantOrders.filter((order) =>
-    ['driver_assigned', 'picked_up', 'delivering'].includes(order.status),
-  )
-  const revenue = merchantOrders
-    .filter((order) => order.status === 'delivered')
-    .reduce((total, order) => total + (order.subtotal ?? order.total), 0)
-
-  return (
-    <div className="page-content role-page">
-      <section className="page-heading">
-        <p className="eyebrow">ESPACE COMMERÇANT</p>
-        <h1>Bonjour, {user.name.split(' ')[0]} 👋</h1>
-        <p>Gérez vos commandes en quelques gestes.</p>
-      </section>
-
-      <div className="role-switch">
-        <strong>Compte marchand</strong>
-        <button onClick={onReturnToCustomer}>Revenir au client</button>
-      </div>
-
-      <div className="stats-grid">
-        <div><span>Commandes</span><strong>{merchantOrders.length}</strong></div>
-        <div><span>En attente</span><strong>{pending.length}</strong></div>
-        <div><span>Chiffre d'affaires</span><strong>{formatCurrency(revenue)}</strong></div>
-      </div>
-
-      <section className="section-block">
-        <div className="section-heading">
-          <div>
-            <p className="eyebrow">COMMANDES</p>
-            <h2>À traiter maintenant</h2>
-          </div>
-        </div>
-
-        {merchantOrdersLoading ? (
-          <div className="empty-state">
-            <span>⌖</span>
-            <strong>Chargement…</strong>
-          </div>
-        ) : null}
-
-        <div className="order-list">
-          {[...pending, ...active].length ? (
-            [...pending, ...active].map((order) => (
-              <div key={order.id} className="workflow-card">
-                <OrderCard order={order} onOpen={() => undefined} />
-                <div className="workflow-actions">
-                  {order.status === 'pending' ? (
-                    <>
-                      <button
-                        onClick={() => action(order.id, 'accepted')}
-                        disabled={actingId === order.id}
-                      >
-                        Accepter
-                      </button>
-                      <button
-                        className="danger-action"
-                        onClick={() => action(order.id, 'merchant_rejected')}
-                        disabled={actingId === order.id}
-                      >
-                        Refuser
-                      </button>
-                    </>
-                  ) : null}
-                  {order.status === 'accepted' ? (
-                    <button onClick={() => action(order.id, 'preparing')} disabled={actingId === order.id}>
-                      Commencer préparation
-                    </button>
-                  ) : null}
-                  {order.status === 'preparing' ? (
-                    <button onClick={() => action(order.id, 'ready')} disabled={actingId === order.id}>
-                      Commande prête
-                    </button>
-                  ) : null}
-                  {order.status === 'ready' ? (
-                    <span className="muted">En attente d'un livreur…</span>
-                  ) : null}
-                </div>
-              </div>
-            ))
-          ) : !merchantOrdersLoading ? (
-            <div className="empty-state">
-              <span>✓</span>
-              <strong>Aucune commande</strong>
-              <p>Les nouvelles commandes apparaîtront ici.</p>
-            </div>
-          ) : null}
-        </div>
-      </section>
-
-      {withDriver.length ? (
-        <section className="section-block">
-          <div className="section-heading">
-            <div>
-              <p className="eyebrow">EN LIVRAISON</p>
-              <h2>Prises en charge par un livreur</h2>
-            </div>
-          </div>
-          <div className="order-list">
-            {withDriver.map((order) => (
-              <div key={order.id} className="workflow-card">
-                <OrderCard order={order} onOpen={() => undefined} />
-                <div className="workflow-actions">
-                  <span className="muted">
-                    Livreur : {order.driver?.name ?? 'assigné, en attente de récupération'}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-      ) : null}
-    </div>
-  )
-}
 
 function useDriverGuard(user: { role?: string }) {
   return user.role === 'driver'
 }
 
+function isSameDay(isoA?: string, isoB: Date = new Date()): boolean {
+  if (!isoA) return false
+  const a = new Date(isoA)
+  if (Number.isNaN(a.getTime())) return false
+  return (
+    a.getFullYear() === isoB.getFullYear() &&
+    a.getMonth() === isoB.getMonth() &&
+    a.getDate() === isoB.getDate()
+  )
+}
+
+function formatStepTime(iso?: string): string | null {
+  if (!iso) return null
+  const date = new Date(iso)
+  if (Number.isNaN(date.getTime())) return null
+  return date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+}
+
+// Un livreur a "traité" une course aujourd'hui si elle a été récupérée ou
+// livrée aujourd'hui, ou si elle est encore active (donc forcément en
+// cours aujourd'hui). Aucune donnée inventée : uniquement des horodatages
+// réels déjà présents sur la commande.
+function isTodayActivity(order: Order, today: Date): boolean {
+  if (['driver_assigned', 'picked_up', 'delivering'].includes(order.status)) return true
+  if (order.status === 'delivered' && isSameDay(order.tracking?.deliveredAt, today)) return true
+  return isSameDay(order.tracking?.pickedUpAt, today)
+}
+
+function formatDelta(todayValue: number, yesterdayValue: number, unit: 'count' | 'amount'): string | null {
+  if (yesterdayValue <= 0) {
+    // Pas de référence hier : afficher une évolution serait inventé.
+    return todayValue > 0 ? 'Nouveau aujourd’hui' : null
+  }
+  const diff = todayValue - yesterdayValue
+  if (diff === 0) return 'Stable vs hier'
+  const sign = diff > 0 ? '+' : ''
+  if (unit === 'count') return `${sign}${diff} vs hier`
+  const percent = Math.round((diff / yesterdayValue) * 100)
+  return `${percent > 0 ? '+' : ''}${percent}% vs hier`
+}
+
 export function DriverHome({ onReturnToCustomer }: { onReturnToCustomer: () => void }) {
-  const { user, driverOrders, driverOrdersLoading, advanceDriverOrderStatus, confirmDelivery } = useApp()
+  const { user, driverOrders, driverOrdersLoading, availableMissions, advanceDriverOrderStatus, confirmDelivery } =
+    useApp()
 
   const [pin, setPin] = useState('')
   const [pinError, setPinError] = useState('')
   const [confirming, setConfirming] = useState(false)
+  const { status: locationStatus } = useUserLocation()
 
   const assigned = driverOrders.find((order) => order.status === 'driver_assigned')
   const active = driverOrders.find((order) => ['picked_up', 'delivering'].includes(order.status))
+  const highlighted = active ?? assigned
+
+  const stats = useMemo(() => {
+    const now = new Date()
+    const yesterday = new Date(now)
+    yesterday.setDate(now.getDate() - 1)
+
+    const todayOrders = driverOrders.filter((order) => isTodayActivity(order, now))
+    const yesterdayOrders = driverOrders.filter(
+      (order) =>
+        (order.status === 'delivered' && isSameDay(order.tracking?.deliveredAt, yesterday)) ||
+        isSameDay(order.tracking?.pickedUpAt, yesterday),
+    )
+
+    const todayRevenue = todayOrders
+      .filter((order) => order.status === 'delivered')
+      .reduce((sum, order) => sum + calculateDriverEarnings(order.deliveryFee ?? 0), 0)
+    const yesterdayRevenue = yesterdayOrders
+      .filter((order) => order.status === 'delivered')
+      .reduce((sum, order) => sum + calculateDriverEarnings(order.deliveryFee ?? 0), 0)
+
+    return {
+      coursesToday: todayOrders.length,
+      coursesDelta: formatDelta(todayOrders.length, yesterdayOrders.length, 'count'),
+      revenueToday: todayRevenue,
+      revenueDelta: formatDelta(todayRevenue, yesterdayRevenue, 'amount'),
+    }
+  }, [driverOrders])
+
+  const merchant = highlighted ? merchants.find((entry) => entry.id === highlighted.merchantId) : undefined
 
   const handleConfirm = async () => {
     if (!active) return
@@ -199,16 +132,49 @@ export function DriverHome({ onReturnToCustomer }: { onReturnToCustomer: () => v
   }
 
   return (
-    <div className="page-content role-page">
+    <div className="page-content role-page driver-home">
       <section className="page-heading">
         <p className="eyebrow">ESPACE LIVREUR</p>
         <h1>Bonjour {user.name.split(' ')[0]} 👋</h1>
         <p>Vos courses réelles, au même endroit.</p>
       </section>
 
-      <div className="role-switch">
-        <strong>Compte livreur</strong>
-        <button onClick={onReturnToCustomer}>Revenir au client</button>
+      <div className="driver-hero-actions">
+        <span>
+          <ShieldCheck size={15} />
+          Compte livreur
+        </span>
+        <button type="button" onClick={onReturnToCustomer}>
+          <ArrowRightCircle size={15} />
+          Revenir au client
+        </button>
+      </div>
+
+      <div className="driver-stats-grid">
+        <div className="driver-stat-card">
+          <span className="driver-stat-icon">
+            <Package size={17} />
+          </span>
+          <strong>{stats.coursesToday}</strong>
+          <small>Courses du jour</small>
+          {stats.coursesDelta ? <span className="driver-stat-delta">{stats.coursesDelta}</span> : null}
+        </div>
+        <div className="driver-stat-card">
+          <span className="driver-stat-icon">
+            <Wallet2 size={17} />
+          </span>
+          <strong>{formatCurrency(stats.revenueToday)}</strong>
+          <small>Revenus du jour</small>
+          {stats.revenueDelta ? <span className="driver-stat-delta">{stats.revenueDelta}</span> : null}
+        </div>
+        <div className="driver-stat-card">
+          <span className="driver-stat-icon">
+            <Clock3 size={17} />
+          </span>
+          <strong>{availableMissions.length}</strong>
+          <small>Missions dispo.</small>
+          {locationStatus === 'success' ? <span className="driver-stat-delta">À proximité</span> : null}
+        </div>
       </div>
 
       {driverOrdersLoading ? (
@@ -216,74 +182,127 @@ export function DriverHome({ onReturnToCustomer }: { onReturnToCustomer: () => v
           <span>⌖</span>
           <strong>Chargement…</strong>
         </div>
-      ) : null}
+      ) : highlighted ? (
+        <section className="driver-active-section">
+          <div className="section-heading">
+            <h2>Course active</h2>
+          </div>
 
-      {assigned ? (
-        <section className="delivery-panel">
-          <p className="eyebrow">COURSE ASSIGNÉE</p>
-          <h2>{assigned.merchantName}</h2>
-          <p>{assigned.deliveryAddress ?? 'Adresse non renseignée'}</p>
-          <button
-            className="primary-button"
-            onClick={() => advanceDriverOrderStatus(assigned.id, 'picked_up')}
-          >
-            Commande récupérée
-          </button>
-        </section>
-      ) : null}
+          <article className="driver-order-card">
+            <div className="driver-order-top">
+              <div className="driver-order-merchant-image">
+                {merchant?.image ? <img src={merchant.image} alt="" /> : <Package size={20} />}
+              </div>
+              <div className="driver-order-merchant-info">
+                <strong>{highlighted.merchantName}</strong>
+                <span>
+                  <MapPin size={12} />
+                  {highlighted.deliveryAddress ?? 'Adresse non renseignée'}
+                </span>
+              </div>
+              {highlighted.orderNumber ? (
+                <span className="driver-order-ref">#{highlighted.orderNumber}</span>
+              ) : null}
+            </div>
 
-      {active ? (
-        <section className="delivery-panel">
-          <p className="eyebrow">LIVRAISON EN COURS</p>
-          <h2>{active.merchantName}</h2>
-          <p>{active.deliveryAddress ?? 'Adresse non renseignée'}</p>
+            <span className={`driver-order-status ${highlighted.status}`}>
+              {highlighted.status === 'driver_assigned'
+                ? 'Course assignée'
+                : highlighted.status === 'picked_up'
+                  ? 'Commande récupérée'
+                  : 'En livraison'}
+            </span>
 
-          {active.status === 'picked_up' ? (
-            <button
-              className="primary-button"
-              onClick={() => advanceDriverOrderStatus(active.id, 'delivering')}
-            >
-              Commencer la livraison
-            </button>
-          ) : (
-            <>
-              <label>
-                Demandez le code PIN au client
+            {highlighted.status === 'driver_assigned' ? (
+              <button
+                className="primary-button"
+                onClick={() => advanceDriverOrderStatus(highlighted.id, 'picked_up')}
+              >
+                Commande récupérée
+              </button>
+            ) : highlighted.status === 'picked_up' ? (
+              <button
+                className="primary-button"
+                onClick={() => advanceDriverOrderStatus(highlighted.id, 'delivering')}
+              >
+                Commencer la livraison
+              </button>
+            ) : (
+              <div className="driver-pin-card">
+                <div className="driver-pin-head">
+                  <ShieldCheck size={18} />
+                  <div>
+                    <strong>Code PIN client</strong>
+                    <p>Demandez le code PIN au client pour confirmer la remise.</p>
+                  </div>
+                </div>
                 <input
                   value={pin}
                   onChange={(event) => {
-                    setPin(event.target.value)
+                    setPin(event.target.value.replace(/\D/g, '').slice(0, 4))
                     setPinError('')
                   }}
-                  placeholder="4 chiffres"
+                  placeholder="Entrez le code PIN (4 chiffres)"
                   inputMode="numeric"
                   maxLength={4}
                 />
-              </label>
-              {pinError ? (
-                <p className="checkout-error" role="alert">
-                  {pinError}
-                </p>
-              ) : null}
-              <button
-                className="primary-button"
-                onClick={handleConfirm}
-                disabled={confirming || pin.length !== 4}
-              >
-                {confirming ? 'Vérification…' : 'Confirmer la livraison'}
-              </button>
-            </>
-          )}
-        </section>
-      ) : null}
+                {pinError ? (
+                  <p className="checkout-error" role="alert">
+                    {pinError}
+                  </p>
+                ) : null}
+                <button
+                  className="primary-button"
+                  onClick={handleConfirm}
+                  disabled={confirming || pin.length !== 4}
+                >
+                  {confirming ? 'Vérification…' : 'Confirmer la livraison'}
+                </button>
+              </div>
+            )}
+          </article>
 
-      {!driverOrdersLoading && !assigned && !active ? (
+          <div className="driver-stepper">
+            <div className="section-heading">
+              <h3>Prochaine étape</h3>
+              <span className="driver-stepper-status">
+                <span className="dot" />
+                {highlighted.status === 'delivering' ? 'Livraison en cours' : 'En préparation de la course'}
+              </span>
+            </div>
+            <div className="driver-stepper-track">
+              {(
+                [
+                  { key: 'picked_up', label: 'Commande récupérée', time: highlighted.tracking?.pickedUpAt },
+                  { key: 'delivering', label: 'En route', time: highlighted.tracking?.outForDeliveryAt },
+                  { key: 'delivered', label: 'Livrée', time: highlighted.tracking?.deliveredAt },
+                ] as const
+              ).map((step, index, list) => {
+                const order = ['driver_assigned', 'picked_up', 'delivering', 'delivered']
+                const currentIndex = order.indexOf(highlighted.status)
+                const stepIndex = order.indexOf(step.key)
+                const done = currentIndex > stepIndex
+                const current = currentIndex === stepIndex
+                const time = formatStepTime(step.time)
+                return (
+                  <div key={step.key} className={`driver-step ${done ? 'done' : ''} ${current ? 'current' : ''}`}>
+                    <span className="driver-step-node" />
+                    <strong>{step.label}</strong>
+                    <small>{time ?? (done ? 'Confirmée' : current ? 'En cours' : '—')}</small>
+                    {index < list.length - 1 ? <span className={`driver-step-line ${done ? 'done' : ''}`} /> : null}
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        </section>
+      ) : (
         <div className="empty-state">
           <span>⌖</span>
           <strong>Aucune course en cours</strong>
           <p>Consultez l'onglet Missions pour en accepter une.</p>
         </div>
-      ) : null}
+      )}
     </div>
   )
 }
