@@ -329,6 +329,7 @@ function AppShell() {
             <span>© 2026 RUBIGO</span>
             <span>La livraison qui nous rapproche.</span>
             <span>Support · Adzopé</span>
+            <span className="footer-credit">Conçu par HanCode Studio</span>
           </footer>
         ) : null}
       </main>

@@ -1749,6 +1749,7 @@ button:disabled {
 
 footer {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   gap: 12px;
   margin-top: 48px;
@@ -1756,6 +1757,21 @@ footer {
   border-top: 1px solid var(--rubigo-border);
   color: var(--rubigo-text-muted);
   font-size: 12px;
+}
+
+.footer-credit {
+  width: 100%;
+  margin-top: 4px;
+  color: var(--rubigo-text-muted);
+  font-size: 10px;
+  text-align: center;
+  opacity: 0.7;
+}
+
+@media (max-width: 760px) {
+  footer {
+    padding: 18px 20px;
+  }
 }
 
 /* ==========================================================================
