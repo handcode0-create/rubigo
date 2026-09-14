@@ -901,3 +901,262 @@ html[data-rubigo-theme="dark"] .trust-icon {
 html[data-rubigo-theme="dark"] .trust-icon.active {
   background: #22c55e !important;
 }
+
+/* =========================================================
+   RUBIGO — SURFACES HOME / COMPOSANTS THEME-SAFE
+   Correction : les composants ne conservent plus leurs
+   surfaces/couleurs historiques lorsqu'un thème est actif.
+   ========================================================= */
+
+/* Hiérarchie des surfaces :
+   fond -> section douce -> carte -> contrôle. */
+html[data-rubigo-theme] .section-block {
+  background: var(--theme-surface-2) !important;
+  color: var(--theme-text) !important;
+  border-color: var(--theme-border) !important;
+}
+
+html[data-rubigo-theme] .service-card {
+  background: var(--theme-surface-2) !important;
+  color: var(--theme-text) !important;
+  border: 1px solid var(--theme-border) !important;
+  box-shadow: none !important;
+}
+
+html[data-rubigo-theme] .service-label {
+  color: var(--theme-text) !important;
+}
+
+html[data-rubigo-theme] .service-description {
+  color: var(--theme-muted) !important;
+}
+
+/* Les cartes restent plus élevées que les sections. */
+html[data-rubigo-theme] .merchant-card,
+html[data-rubigo-theme] .product-card,
+html[data-rubigo-theme] .order-card {
+  background: var(--theme-surface) !important;
+  color: var(--theme-text) !important;
+  border-color: var(--theme-border) !important;
+}
+
+/* Contrôles qui avaient un blanc codé en dur dans App.css. */
+html[data-rubigo-theme] .card-stepper {
+  background: var(--theme-primary-soft) !important;
+}
+
+html[data-rubigo-theme] .card-stepper button {
+  background: var(--theme-surface) !important;
+  color: var(--theme-primary) !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12) !important;
+}
+
+html[data-rubigo-theme] .card-stepper button:hover {
+  background: var(--theme-surface-2) !important;
+}
+
+html[data-rubigo-theme] .card-stepper span {
+  color: var(--theme-primary-deep) !important;
+}
+
+/* Service icons : fonds pilotés par le thème, plus de palettes fixes. */
+html[data-rubigo-theme] .coral .service-icon,
+html[data-rubigo-theme] .lime .service-icon,
+html[data-rubigo-theme] .blue .service-icon,
+html[data-rubigo-theme] .gold .service-icon {
+  border: 1px solid var(--theme-border) !important;
+}
+
+html[data-rubigo-theme] .coral .service-icon {
+  color: var(--theme-accent) !important;
+  background: color-mix(
+    in srgb,
+    var(--theme-accent) 14%,
+    var(--theme-surface)
+  ) !important;
+}
+
+html[data-rubigo-theme] .lime .service-icon {
+  color: var(--theme-primary-deep) !important;
+  background: var(--theme-primary-soft) !important;
+}
+
+html[data-rubigo-theme] .blue .service-icon {
+  color: var(--theme-primary) !important;
+  background: color-mix(
+    in srgb,
+    var(--theme-primary) 12%,
+    var(--theme-surface)
+  ) !important;
+}
+
+html[data-rubigo-theme] .gold .service-icon {
+  color: var(--theme-warning) !important;
+  background: color-mix(
+    in srgb,
+    var(--theme-warning) 14%,
+    var(--theme-surface)
+  ) !important;
+}
+
+/* Surfaces fixes de l'ancien design : hover/navigation. */
+html[data-rubigo-theme] .nav-item:hover,
+html[data-rubigo-theme] .profile-row:hover,
+html[data-rubigo-theme] .icon-button:hover {
+  background: var(--theme-surface-2) !important;
+  color: var(--theme-text) !important;
+}
+
+/* Bouton secondaire : ne reste jamais blanc en dehors du thème clair. */
+html[data-rubigo-theme] .btn-secondary {
+  background: var(--theme-surface) !important;
+  color: var(--theme-primary) !important;
+  border-color: var(--theme-primary) !important;
+}
+
+/* Topbar et sidebar restent cohérents avec le thème actif. */
+html[data-rubigo-theme] .topbar,
+html[data-rubigo-theme] .sidebar {
+  background: var(--theme-surface) !important;
+}
+
+/* Badges / petits éléments qui utilisaient des couleurs claires fixes. */
+html[data-rubigo-theme] .open-tag,
+html[data-rubigo-theme] .badge-open {
+  color: var(--theme-primary-deep) !important;
+  background: var(--theme-primary-soft) !important;
+}
+
+html[data-rubigo-theme] .badge-new {
+  color: var(--theme-primary) !important;
+  background: color-mix(
+    in srgb,
+    var(--theme-primary) 12%,
+    var(--theme-surface)
+  ) !important;
+}
+
+/* Recherche : tous les contrôles internes suivent la surface active. */
+html[data-rubigo-theme] .search-input input,
+html[data-rubigo-theme] .search-input {
+  background: var(--theme-surface) !important;
+  color: var(--theme-text) !important;
+}
+
+html[data-rubigo-theme] .search-input input::placeholder {
+  color: var(--theme-muted) !important;
+  opacity: 1 !important;
+}
+
+/* Mode sombre : hiérarchie volontairement plus nette. */
+html[data-rubigo-theme="dark"] .section-block {
+  background: #0f1714 !important;
+}
+
+html[data-rubigo-theme="dark"] .service-card {
+  background: #121a18 !important;
+  border-color: #26332f !important;
+}
+
+html[data-rubigo-theme="dark"] .merchant-card,
+html[data-rubigo-theme="dark"] .product-card,
+html[data-rubigo-theme="dark"] .order-card {
+  background: #121a18 !important;
+  border-color: #26332f !important;
+}
+
+/* Ocean : sections légèrement teintées, cartes blanches. */
+html[data-rubigo-theme="ocean"] .section-block {
+  background: #ecfeff !important;
+}
+
+/* Sand : sections chaudes, cartes crème. */
+html[data-rubigo-theme="sand"] .section-block {
+  background: #f7f0e5 !important;
+}
+
+/* Rubigo clair : sections vert très pâle, cartes blanches. */
+html[data-rubigo-theme="rubigo"] .section-block {
+  background: #f3f8f5 !important;
+}
+
+
+/* =========================================================
+   HOME — HERO CAROUSEL : CONTRASTE RENFORCÉ
+   ========================================================= */
+
+html[data-rubigo-theme="dark"] .hero-slide {
+  background: #06120d !important;
+}
+
+/* Assombrit davantage la zone contenant badge + titre + description + CTA */
+html[data-rubigo-theme="dark"] .hero-slide-scrim {
+  background:
+    linear-gradient(
+      to bottom,
+      rgba(5, 18, 12, 0.05) 0%,
+      rgba(5, 18, 12, 0.08) 28%,
+      rgba(5, 18, 12, 0.28) 48%,
+      rgba(5, 18, 12, 0.78) 70%,
+      rgba(5, 18, 12, 0.96) 100%
+    ) !important;
+}
+
+/* Badge "À DÉCOUVRIR" : contraste beaucoup plus net */
+html[data-rubigo-theme="dark"] .hero-slide-badge {
+  background: #d6e86a !important;
+  color: #12351f !important;
+  border: 1px solid rgba(18, 53, 31, 0.18);
+  font-weight: 900 !important;
+  text-shadow: none !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.22);
+}
+
+/* Titre */
+html[data-rubigo-theme="dark"] .hero-slide-copy h2 {
+  color: #ffffff !important;
+  text-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.55),
+    0 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+/* Description */
+html[data-rubigo-theme="dark"] .hero-slide-copy p {
+  color: #f1f5f3 !important;
+  text-shadow:
+    0 2px 7px rgba(0, 0, 0, 0.65);
+}
+
+/* CTA */
+html[data-rubigo-theme="dark"] .hero-slide-cta {
+  background: #d6e86a !important;
+  color: #12351f !important;
+  border: 1px solid #d6e86a !important;
+  font-weight: 900 !important;
+  box-shadow:
+    0 6px 18px rgba(0, 0, 0, 0.28),
+    0 2px 5px rgba(0, 0, 0, 0.16);
+}
+
+/* Hover / focus */
+html[data-rubigo-theme="dark"] .hero-slide-cta:hover,
+html[data-rubigo-theme="dark"] .hero-slide-cta:focus-visible {
+  background: #e4f58a !important;
+  color: #0d2b19 !important;
+}
+
+/* Petit chip en haut à droite */
+html[data-rubigo-theme="dark"] .hero-slide-chip {
+  background: rgba(255, 255, 255, 0.96) !important;
+  color: #12351f !important;
+  border: 1px solid rgba(18, 53, 31, 0.12);
+}
+
+/* Dots */
+html[data-rubigo-theme="dark"] .hero-dot {
+  background: rgba(255, 255, 255, 0.5) !important;
+}
+
+html[data-rubigo-theme="dark"] .hero-dot.active {
+  background: #d6e86a !important;
+}

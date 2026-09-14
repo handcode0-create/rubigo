@@ -1,4 +1,3 @@
-
 /* ==========================================================================
    RUBIGO — COMMANDES / ORDER DETAIL
    --------------------------------------------------------------------------
@@ -952,4 +951,306 @@
   .order-preview-products::-webkit-scrollbar {
     display: none;
   }
+}
+
+/* ==========================================================================
+   RUBIGO — ADAPTATION THÈMES
+   IMPORTANT : aucune logique React n'est modifiée.
+   Ces règles remplacent uniquement les surfaces/couleurs fixes de la page
+   Commandes afin qu'elles suivent le thème global.
+   ========================================================================== */
+
+html[data-rubigo-theme] .orders-page {
+  --orders-green: var(--theme-primary);
+  --orders-green-dark: var(--theme-primary-deep);
+  --orders-surface: var(--theme-surface);
+  --orders-bg: var(--theme-bg);
+  --orders-border: var(--theme-border);
+  --orders-muted: var(--theme-muted);
+  --orders-text: var(--theme-text);
+  color: var(--theme-text);
+}
+
+html[data-rubigo-theme] .orders-page .orders-cart-card,
+html[data-rubigo-theme] .orders-page .order-preview,
+html[data-rubigo-theme] .orders-page .order-detail-hero,
+html[data-rubigo-theme] .orders-page .order-tracking-card,
+html[data-rubigo-theme] .orders-page .order-section {
+  background: var(--theme-surface) !important;
+  color: var(--theme-text) !important;
+  border-color: var(--theme-border) !important;
+  box-shadow: var(--theme-shadow) !important;
+}
+
+html[data-rubigo-theme] .orders-page .orders-cart-products,
+html[data-rubigo-theme] .orders-page .order-preview-bottom,
+html[data-rubigo-theme] .orders-page .order-detail-product {
+  border-color: var(--theme-border) !important;
+}
+
+html[data-rubigo-theme] .orders-page .orders-tabs {
+  background: var(--theme-surface-2) !important;
+  border-color: var(--theme-border) !important;
+}
+
+html[data-rubigo-theme] .orders-page .orders-tabs button {
+  color: var(--theme-muted) !important;
+}
+
+html[data-rubigo-theme] .orders-page .orders-tabs button.active {
+  background: var(--theme-surface) !important;
+  color: var(--theme-text) !important;
+  box-shadow: var(--theme-shadow) !important;
+}
+
+html[data-rubigo-theme] .orders-page .orders-tabs button b {
+  background: var(--theme-primary-soft) !important;
+  color: var(--theme-primary) !important;
+}
+
+html[data-rubigo-theme] .orders-page .order-product-content strong,
+html[data-rubigo-theme] .orders-page .order-product-side strong,
+html[data-rubigo-theme] .orders-page .order-preview-merchant strong,
+html[data-rubigo-theme] .orders-page .order-mini-product strong,
+html[data-rubigo-theme] .orders-page .order-detail-product-copy h3,
+html[data-rubigo-theme] .orders-page .order-detail-product > strong,
+html[data-rubigo-theme] .orders-page .orders-price-summary strong,
+html[data-rubigo-theme] .orders-page .order-totals strong,
+html[data-rubigo-theme] .orders-page .order-cancel-confirm p,
+html[data-rubigo-theme] .orders-page .order-destination strong,
+html[data-rubigo-theme] .orders-page .order-driver-banner strong {
+  color: var(--theme-text) !important;
+}
+
+html[data-rubigo-theme] .orders-page .order-product-content span,
+html[data-rubigo-theme] .orders-page .orders-price-summary span,
+html[data-rubigo-theme] .orders-page .order-number,
+html[data-rubigo-theme] .orders-page .order-preview-merchant span,
+html[data-rubigo-theme] .orders-page .order-mini-product span,
+html[data-rubigo-theme] .orders-page .order-preview-merchant > svg,
+html[data-rubigo-theme] .orders-page .order-distance,
+html[data-rubigo-theme] .orders-page .order-section-heading > span,
+html[data-rubigo-theme] .orders-page .order-detail-merchant p:last-child,
+html[data-rubigo-theme] .orders-page .order-destination span,
+html[data-rubigo-theme] .orders-page .order-driver-banner span,
+html[data-rubigo-theme] .orders-page .order-search,
+html[data-rubigo-theme] .orders-page .order-no-results,
+html[data-rubigo-theme] .orders-page .order-totals span,
+html[data-rubigo-theme] .orders-page .order-pin-card p:last-child,
+html[data-rubigo-theme] .orders-page .order-detail-footer {
+  color: var(--theme-muted) !important;
+}
+
+html[data-rubigo-theme] .orders-page .order-product-side button {
+  color: var(--theme-muted) !important;
+}
+
+html[data-rubigo-theme] .orders-page .merchant-mini-icon,
+html[data-rubigo-theme] .orders-page .merchant-detail-avatar,
+html[data-rubigo-theme] .orders-page .product-thumbnail {
+  background: var(--theme-surface-2) !important;
+  color: var(--theme-primary) !important;
+}
+
+html[data-rubigo-theme] .orders-page .order-mini-product {
+  background: var(--theme-surface-2) !important;
+  border-color: var(--theme-border) !important;
+}
+
+html[data-rubigo-theme] .orders-page .order-more-items {
+  background: var(--theme-primary-soft) !important;
+  color: var(--theme-primary) !important;
+}
+
+html[data-rubigo-theme] .orders-page .orders-empty {
+  background: var(--theme-surface) !important;
+  color: var(--theme-text) !important;
+  border-color: var(--theme-border) !important;
+}
+
+html[data-rubigo-theme] .orders-page .orders-empty-icon {
+  background: var(--theme-primary-soft) !important;
+  color: var(--theme-primary) !important;
+}
+
+html[data-rubigo-theme] .orders-page .order-destination {
+  background: var(--theme-primary-soft) !important;
+  color: var(--theme-primary) !important;
+}
+
+html[data-rubigo-theme] .orders-page .order-driver-banner {
+  background: var(--theme-primary-soft) !important;
+  color: var(--theme-primary) !important;
+}
+
+html[data-rubigo-theme] .orders-page .order-driver-icon {
+  background: color-mix(
+    in srgb,
+    var(--theme-primary) 14%,
+    var(--theme-surface)
+  ) !important;
+  color: var(--theme-primary) !important;
+}
+
+html[data-rubigo-theme] .orders-page .order-search {
+  background: var(--theme-surface-2) !important;
+  border-color: var(--theme-border) !important;
+}
+
+html[data-rubigo-theme] .orders-page .order-search input {
+  background: transparent !important;
+  color: var(--theme-text) !important;
+}
+
+html[data-rubigo-theme] .orders-page .order-search input::placeholder {
+  color: var(--theme-muted) !important;
+  opacity: 1;
+}
+
+html[data-rubigo-theme] .orders-page .order-pin-card {
+  background: var(--theme-primary-soft) !important;
+  border-color: var(--theme-border) !important;
+  color: var(--theme-text) !important;
+}
+
+html[data-rubigo-theme] .orders-page .order-pin-icon {
+  background: color-mix(
+    in srgb,
+    var(--theme-primary) 14%,
+    var(--theme-surface)
+  ) !important;
+  color: var(--theme-primary) !important;
+}
+
+html[data-rubigo-theme] .orders-page .order-cancel-trigger,
+html[data-rubigo-theme] .orders-page .order-cancel-confirm {
+  background: color-mix(
+    in srgb,
+    var(--theme-danger) 8%,
+    var(--theme-surface)
+  ) !important;
+  border-color: color-mix(
+    in srgb,
+    var(--theme-danger) 30%,
+    var(--theme-border)
+  ) !important;
+  color: var(--theme-danger) !important;
+}
+
+html[data-rubigo-theme]
+  .orders-page
+  .order-cancel-confirm-actions
+  button:last-child {
+  background: var(--theme-surface) !important;
+  color: var(--theme-text) !important;
+  border-color: var(--theme-border) !important;
+}
+
+html[data-rubigo-theme] .orders-page .order-progress-node {
+  background: var(--theme-surface) !important;
+  border-color: var(--theme-border) !important;
+  color: var(--theme-muted) !important;
+}
+
+html[data-rubigo-theme] .orders-page .order-progress-line {
+  background: var(--theme-border) !important;
+}
+
+html[data-rubigo-theme]
+  .orders-page
+  .order-progress-step
+  span:not(.order-progress-line),
+html[data-rubigo-theme] .orders-page .order-progress-time.muted {
+  color: var(--theme-muted) !important;
+}
+
+html[data-rubigo-theme]
+  .orders-page
+  .order-progress-step.current
+  span:not(.order-progress-line),
+html[data-rubigo-theme]
+  .orders-page
+  .order-progress-step.done
+  span:not(.order-progress-line),
+html[data-rubigo-theme] .orders-page .order-progress-time,
+html[data-rubigo-theme] .orders-page .order-status,
+html[data-rubigo-theme] .orders-page .order-preview-bottom > strong,
+html[data-rubigo-theme] .orders-page .order-preview-bottom span,
+html[data-rubigo-theme] .orders-page .orders-cart-total,
+html[data-rubigo-theme] .orders-page .orders-price-summary .total strong,
+html[data-rubigo-theme] .orders-page .order-totals .grand-total strong {
+  color: var(--theme-primary) !important;
+}
+
+html[data-rubigo-theme]
+  .orders-page
+  .order-progress-step.current
+  .order-progress-node,
+html[data-rubigo-theme]
+  .orders-page
+  .order-progress-step.done
+  .order-progress-node,
+html[data-rubigo-theme] .orders-page .order-progress-line.done {
+  background: var(--theme-primary) !important;
+  border-color: var(--theme-primary) !important;
+  color: #fff !important;
+}
+
+/* Dark spécifique : aucun bloc gris/blanc résiduel sur la page commandes. */
+html[data-rubigo-theme="dark"] .orders-page .orders-tabs,
+html[data-rubigo-theme="dark"] .orders-page .order-mini-product,
+html[data-rubigo-theme="dark"] .orders-page .orders-empty,
+html[data-rubigo-theme="dark"] .orders-page .order-search,
+html[data-rubigo-theme="dark"] .orders-page .merchant-mini-icon,
+html[data-rubigo-theme="dark"] .orders-page .merchant-detail-avatar,
+html[data-rubigo-theme="dark"] .orders-page .product-thumbnail {
+  background: #17221f !important;
+}
+
+html[data-rubigo-theme="dark"] .orders-page .orders-tabs button.active,
+html[data-rubigo-theme="dark"] .orders-page .orders-empty,
+html[data-rubigo-theme="dark"] .orders-page .order-search {
+  background: #121a18 !important;
+}
+
+html[data-rubigo-theme="dark"] .orders-page .order-destination,
+html[data-rubigo-theme="dark"] .orders-page .order-driver-banner,
+html[data-rubigo-theme="dark"] .orders-page .order-pin-card {
+  background: #17351f !important;
+}
+
+html[data-rubigo-theme="dark"] .orders-page .orders-empty strong,
+html[data-rubigo-theme="dark"] .orders-page .order-preview-merchant strong,
+html[data-rubigo-theme="dark"] .orders-page .order-detail-merchant h1,
+html[data-rubigo-theme="dark"] .orders-page .order-section-heading h2,
+html[data-rubigo-theme="dark"] .orders-page .orders-cart-head h2 {
+  color: #f3f7f5 !important;
+}
+
+html[data-rubigo-theme="dark"] .orders-page .orders-empty p,
+html[data-rubigo-theme="dark"] .orders-page .order-preview-merchant span,
+html[data-rubigo-theme="dark"] .orders-page .order-number,
+html[data-rubigo-theme="dark"] .orders-page .order-mini-product span,
+html[data-rubigo-theme="dark"] .orders-page .order-detail-merchant p:last-child,
+html[data-rubigo-theme="dark"] .orders-page .order-detail-product-copy > span,
+html[data-rubigo-theme="dark"] .orders-page .order-detail-footer {
+  color: #b9c5bf !important;
+}
+
+html[data-rubigo-theme] .orders-page .orders-cart-cta,
+html[data-rubigo-theme] .orders-page .primary-button {
+  color: #fff !important;
+  background: var(--theme-primary) !important;
+}
+
+html[data-rubigo-theme="dark"] .orders-page .orders-cart-cta,
+html[data-rubigo-theme="dark"] .orders-page .primary-button {
+  color: #17351f !important;
+  background: var(--rubigo-lime, #d6e86a) !important;
+}
+
+html[data-rubigo-theme="dark"] .orders-page .orders-cart-cta:hover,
+html[data-rubigo-theme="dark"] .orders-page .primary-button:hover {
+  color: #102a1b !important;
+  background: #e2f27f !important;
 }
