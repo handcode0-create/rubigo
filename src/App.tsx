@@ -15,33 +15,31 @@ import { Login } from "./pages/Login";
 import { Orders } from "./pages/Orders";
 import { Profile } from "./pages/Profile";
 import { Checkout, MerchantDetail, ProductDetail } from "./pages/Details";
-import {
-  DriverHistory,
-  DriverHome,
-  DriverMissions,
-} from "./pages/RolePages";
+import { DriverHistory, DriverHome, DriverMissions } from "./pages/RolePages";
 
 import { MerchantDashboard } from "./pages/MerchantDashboard";
 import { AdminDashboard } from "./pages/AdminDashboard";
 import { routerService } from "./services/routerService";
-import { merchants, products } from "./data";
-import type { Merchant, Page, Product, Role } from "./types";
+import { merchants } from "./data";
+import type { CategoryId, Merchant, Page, Product, Role } from "./types";
 import { SplashScreen } from "./components/SplashScreen";
-
 
 const SPLASH_DURATION = 5000;
 
 function AppShell() {
   const [page, setPage] = useState<Page>("home");
 
-  const [selectedMerchant, setSelectedMerchant] =
-    useState<Merchant | null>(null);
+  const [selectedMerchant, setSelectedMerchant] = useState<Merchant | null>(
+    null,
+  );
 
-  const [selectedProduct, setSelectedProduct] =
-    useState<Product | null>(null);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
   const [checkout, setCheckout] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<CategoryId | "all">(
+    "all",
+  );
 
   /*
    * Le timer démarre dès que AppShell est monté.
@@ -63,6 +61,7 @@ function AppShell() {
     cartConflict,
     confirmCartReplacement,
     cancelCartReplacement,
+    products: appProducts,
   } = useApp();
 
   /*
@@ -96,9 +95,7 @@ function AppShell() {
         setSelectedProduct(null);
         setSelectedMerchant(null);
       } else if (state.merchantId) {
-        const merchant = merchants.find(
-          (item) => item.id === state.merchantId,
-        );
+        const merchant = merchants.find((item) => item.id === state.merchantId);
 
         if (merchant) {
           setSelectedMerchant(merchant);
@@ -108,9 +105,7 @@ function AppShell() {
           return;
         }
       } else if (state.productId) {
-        const product = products.find(
-          (item) => item.id === state.productId,
-        );
+        const product = appProducts.find((item) => item.id === state.productId);
 
         if (product) {
           setSelectedProduct(product);
@@ -130,9 +125,8 @@ function AppShell() {
     window.addEventListener("hashchange", handleHashChange);
     handleHashChange();
 
-    return () =>
-      window.removeEventListener("hashchange", handleHashChange);
-  }, []);
+    return () => window.removeEventListener("hashchange", handleHashChange);
+  }, [appProducts]);
 
   /*
    * SPLASH SCREEN
@@ -149,7 +143,13 @@ function AppShell() {
     return <Login />;
   }
 
-  const navigate = (nextPage: Page) => {
+  const navigate = (nextPage: Page, category?: CategoryId | "all") => {
+    if (nextPage === "explore") {
+      setSelectedCategory(category ?? "all");
+    } else {
+      setSelectedCategory("all");
+    }
+
     routerService.navigate({
       page: nextPage,
     });
@@ -198,6 +198,7 @@ function AppShell() {
       <Explore
         onMerchant={openMerchant}
         onProduct={openProduct}
+        initialCategory={selectedCategory}
       />
     ),
 
@@ -207,35 +208,15 @@ function AppShell() {
 
     profile: <Profile onNavigate={navigate} />,
 
-    merchant: (
-      <MerchantDashboard
-        onReturnToCustomer={returnToCustomer}
-      />
-    ),
+    merchant: <MerchantDashboard onReturnToCustomer={returnToCustomer} />,
 
-    driver: (
-      <DriverHome
-        onReturnToCustomer={returnToCustomer}
-      />
-    ),
+    driver: <DriverHome onReturnToCustomer={returnToCustomer} />,
 
-    "driver-missions": (
-      <DriverMissions
-        onReturnToCustomer={returnToCustomer}
-      />
-    ),
+    "driver-missions": <DriverMissions onReturnToCustomer={returnToCustomer} />,
 
-    "driver-history": (
-      <DriverHistory
-        onReturnToCustomer={returnToCustomer}
-      />
-    ),
+    "driver-history": <DriverHistory onReturnToCustomer={returnToCustomer} />,
 
-    admin: (
-      <AdminDashboard
-        onReturnToCustomer={returnToCustomer}
-      />
-    ),
+    admin: <AdminDashboard onReturnToCustomer={returnToCustomer} />,
   };
 
   const roleDefaultPage: Partial<Record<Role, Page>> = {
@@ -245,30 +226,19 @@ function AppShell() {
   };
 
   const roleAllowedPages: Partial<Record<Role, Page[]>> = {
-    driver: [
-      "driver",
-      "driver-missions",
-      "driver-history",
-      "profile",
-    ],
+    driver: ["driver", "driver-missions", "driver-history", "profile"],
 
-    merchant: [
-      "merchant",
-    ],
+    merchant: ["merchant"],
 
-    admin: [
-      "admin",
-    ],
+    admin: ["admin"],
   };
 
   const rolePage =
     activeRole === "customer"
       ? page
-      : (
-          roleAllowedPages[activeRole]?.includes(page)
-            ? page
-            : roleDefaultPage[activeRole]
-        ) ?? page;
+      : ((roleAllowedPages[activeRole]?.includes(page)
+          ? page
+          : roleDefaultPage[activeRole]) ?? page);
 
   const content = checkout ? (
     <Checkout
@@ -296,19 +266,8 @@ function AppShell() {
   const isAdmin = activeRole === "admin";
 
   return (
-    <div
-      className={
-        isAdmin
-          ? "app-shell admin-app-shell"
-          : "app-shell"
-      }
-    >
-      {!isAdmin ? (
-        <Sidebar
-          page={rolePage}
-          onNavigate={navigate}
-        />
-      ) : null}
+    <div className={isAdmin ? "app-shell admin-app-shell" : "app-shell"}>
+      {!isAdmin ? <Sidebar page={rolePage} onNavigate={navigate} /> : null}
 
       <main className="main-content">
         {!isAdmin ? (
@@ -317,9 +276,7 @@ function AppShell() {
             onNavigate={navigate}
             canNavigate={activeRole === "customer"}
             unreadCount={unreadNotifications}
-            onNotifications={() =>
-              setNotificationsOpen(!notificationsOpen)
-            }
+            onNotifications={() => setNotificationsOpen(!notificationsOpen)}
           />
         ) : null}
 
@@ -336,9 +293,7 @@ function AppShell() {
       </main>
 
       {!isAdmin && notificationsOpen ? (
-        <Notifications
-          onClose={() => setNotificationsOpen(false)}
-        />
+        <Notifications onClose={() => setNotificationsOpen(false)} />
       ) : null}
 
       <CartDrawer
@@ -349,12 +304,8 @@ function AppShell() {
 
       <CartConflictModal
         isOpen={Boolean(cartConflict)}
-        existingMerchantName={
-          cartConflict?.existingMerchantName ?? ""
-        }
-        newMerchantName={
-          cartConflict?.newMerchantName ?? ""
-        }
+        existingMerchantName={cartConflict?.existingMerchantName ?? ""}
+        newMerchantName={cartConflict?.newMerchantName ?? ""}
         onCancel={cancelCartReplacement}
         onConfirm={confirmCartReplacement}
       />
@@ -363,10 +314,7 @@ function AppShell() {
         <BottomNavigation
           page={rolePage}
           onNavigate={navigate}
-          cartCount={cart.reduce(
-            (sum, item) => sum + item.quantity,
-            0,
-          )}
+          cartCount={cart.reduce((sum, item) => sum + item.quantity, 0)}
         />
       ) : activeRole === "driver" ? (
         <BottomNavigation

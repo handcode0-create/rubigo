@@ -1,24 +1,45 @@
-import { categories, merchants, services } from '../data'
-import { useApp } from '../context/AppContext'
-import { MerchantCard, OrderCard, ProductCard, ServiceCard } from '../components/Cards'
-import { ArrowRightIcon, CartIcon, MotoIcon, SearchIcon, ShieldCheckIcon, SparklesIcon, StoreIcon } from '../components/Icons'
-import { HeroCarousel, type HeroSlide } from '../components/HeroCarousel'
-import type { Merchant, Page, Product } from '../types'
-import { formatCurrency } from '../utils/formatCurrency'
+import { categories, merchants, services } from "../data";
+import { useApp } from "../context/AppContext";
+import {
+  MerchantCard,
+  OrderCard,
+  ProductCard,
+  ServiceCard,
+} from "../components/Cards";
+import {
+  ArrowRightIcon,
+  CartIcon,
+  MotoIcon,
+  SearchIcon,
+  ShieldCheckIcon,
+  SparklesIcon,
+  StoreIcon,
+} from "../components/Icons";
+import { HeroCarousel, type HeroSlide } from "../components/HeroCarousel";
+import type { CategoryId, Merchant, Page, Product } from "../types";
+import { formatCurrency } from "../utils/formatCurrency";
 
-const HERO_BADGES = ['COUP DE CŒUR', 'NOUVEAU CE MOIS-CI', 'TENDANCE À ADZOPÉ', 'À DÉCOUVRIR', 'PROMO DU JOUR']
+const HERO_BADGES = [
+  "COUP DE CŒUR",
+  "NOUVEAU CE MOIS-CI",
+  "TENDANCE À ADZOPÉ",
+  "À DÉCOUVRIR",
+  "PROMO DU JOUR",
+];
 
 export function Home({
   onNavigate,
   onMerchant,
   onProduct,
 }: {
-  onNavigate: (page: Page) => void
-  onMerchant: (merchant: Merchant) => void
-  onProduct: (product: Product) => void
+  onNavigate: (page: Page, category?: CategoryId | "all") => void;
+  onMerchant: (merchant: Merchant) => void;
+  onProduct: (product: Product) => void;
 }) {
-  const { user, orders, cart, cartTotal, setIsCartOpen, products } = useApp()
-  const activeOrder = orders.find((order) => !['delivered', 'cancelled'].includes(order.status))
+  const { user, orders, cart, cartTotal, setIsCartOpen, products } = useApp();
+  const activeOrder = orders.find(
+    (order) => !["delivered", "cancelled"].includes(order.status),
+  );
 
   const heroSlides: HeroSlide[] = merchants
     .filter((merchant) => merchant.image && merchant.isOpen)
@@ -31,10 +52,10 @@ export function Home({
         merchant.description ??
         `${merchant.category} à Adzopé · livraison en ${merchant.deliveryTime}.`,
       image: merchant.image as string,
-      ctaLabel: 'Commander maintenant',
+      ctaLabel: "Commander maintenant",
       meta: `${merchant.rating.toFixed(1)} · ${merchant.deliveryTime}`,
       onSelect: () => onMerchant(merchant),
-    }))
+    }));
 
   return (
     <div className="page-content">
@@ -42,10 +63,16 @@ export function Home({
         <div>
           <p className="eyebrow">RÉGION DE LA MÉ · ADZOPÉ</p>
           <h1>
-            Bonjour {user.name.split(' ')[0]} <span className="sparkle-accent"><SparklesIcon size={18} /></span>
+            Bonjour {user.name.split(" ")[0]}{" "}
+            <span className="sparkle-accent">
+              <SparklesIcon size={18} />
+            </span>
           </h1>
-          <p className="welcome-copy">Qu’est-ce qu’on vous livre aujourd’hui à Adzopé ?</p>
+          <p className="welcome-copy">
+            Qu’est-ce qu’on vous livre aujourd’hui à Adzopé ?
+          </p>
         </div>
+
         {cart.length > 0 && (
           <button className="quick-order" onClick={() => setIsCartOpen(true)}>
             <CartIcon size={16} />
@@ -54,7 +81,7 @@ export function Home({
         )}
       </section>
 
-      <div className="search-bar" onClick={() => onNavigate('explore')}>
+      <div className="search-bar" onClick={() => onNavigate("explore")}>
         <span className="search-icon-wrap">
           <SearchIcon size={18} />
         </span>
@@ -66,21 +93,29 @@ export function Home({
 
       <div className="trust-strip">
         <div className="trust-step">
-          <span className="trust-icon"><StoreIcon size={16} /></span>
+          <span className="trust-icon">
+            <StoreIcon size={16} />
+          </span>
           <div className="trust-text">
             <strong>Préparation</strong>
             <small>Chez le commerçant</small>
           </div>
         </div>
+
         <div className="trust-step">
-          <span className="trust-icon active"><MotoIcon size={16} /></span>
+          <span className="trust-icon active">
+            <MotoIcon size={16} />
+          </span>
           <div className="trust-text">
             <strong>En route</strong>
             <small>Livreur d'Adzopé</small>
           </div>
         </div>
+
         <div className="trust-step">
-          <span className="trust-icon"><ShieldCheckIcon size={16} /></span>
+          <span className="trust-icon">
+            <ShieldCheckIcon size={16} />
+          </span>
           <div className="trust-text">
             <strong>Sécurité PIN</strong>
             <small>Remise en main propre</small>
@@ -94,17 +129,19 @@ export function Home({
             <p className="eyebrow">AU CHOIX</p>
             <h2>Catégories populaires</h2>
           </div>
-          <button className="text-button" onClick={() => onNavigate('explore')}>
+
+          <button className="text-button" onClick={() => onNavigate("explore")}>
             <span>Tout voir</span>
             <ArrowRightIcon size={14} />
           </button>
         </div>
+
         <div className="category-scroll">
           {categories.slice(0, 10).map((category) => (
             <button
               key={category.id}
               className="category-chip"
-              onClick={() => onNavigate('explore')}
+              onClick={() => onNavigate("explore", category.id)}
             >
               <span className="category-chip-icon">{category.icon}</span>
               {category.label}
@@ -119,17 +156,19 @@ export function Home({
             <p className="eyebrow">UNIVERS RUBIGO</p>
             <h2>Comment peut-on vous aider ?</h2>
           </div>
-          <button className="text-button" onClick={() => onNavigate('explore')}>
+
+          <button className="text-button" onClick={() => onNavigate("explore")}>
             <span>Tout voir</span>
             <ArrowRightIcon size={14} />
           </button>
         </div>
+
         <div className="service-grid">
           {services.map((service) => (
             <ServiceCard
               key={service.id}
               service={service}
-              onSelect={() => onNavigate('explore')}
+              onSelect={() => onNavigate("explore")}
             />
           ))}
         </div>
@@ -141,11 +180,13 @@ export function Home({
             <p className="eyebrow">ADRESSES POPULAIRES</p>
             <h2>Les commerces du moment</h2>
           </div>
-          <button className="text-button" onClick={() => onNavigate('explore')}>
+
+          <button className="text-button" onClick={() => onNavigate("explore")}>
             <span>Explorer la carte</span>
             <ArrowRightIcon size={14} />
           </button>
         </div>
+
         <div className="merchant-grid">
           {merchants.slice(0, 3).map((merchant) => (
             <MerchantCard
@@ -164,6 +205,7 @@ export function Home({
             <h2>À déguster aujourd’hui</h2>
           </div>
         </div>
+
         <div className="product-list">
           {products.slice(0, 2).map((product) => (
             <ProductCard
@@ -180,16 +222,23 @@ export function Home({
           <div className="section-heading">
             <div>
               <p className="eyebrow">LIVRAISON EN COURS</p>
-              <h2>Votre commande #{activeOrder.orderNumber ?? activeOrder.id}</h2>
+              <h2>
+                Votre commande #{activeOrder.orderNumber ?? activeOrder.id}
+              </h2>
             </div>
-            <button className="text-button" onClick={() => onNavigate('orders')}>
+
+            <button
+              className="text-button"
+              onClick={() => onNavigate("orders")}
+            >
               <span>Suivre</span>
               <ArrowRightIcon size={14} />
             </button>
           </div>
-          <OrderCard order={activeOrder} onOpen={() => onNavigate('orders')} />
+
+          <OrderCard order={activeOrder} onOpen={() => onNavigate("orders")} />
         </section>
       )}
     </div>
-  )
+  );
 }
