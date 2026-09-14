@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import "./App.css";
+import "./theme.css";
 import { AppProvider, useApp } from "./context/AppContext";
 import { BottomNavigation } from "./components/Navigation";
 import { Notifications } from "./components/Notifications";

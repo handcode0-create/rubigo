@@ -1,0 +1,494 @@
+/* =========================================================
+   RUBIGO — GLOBAL THEME ADAPTER
+   S'applique à toutes les interfaces :
+   Client / Merchant / Driver / Admin / Profil / Commandes
+   ========================================================= */
+
+/* ---------- THÈMES ---------- */
+
+:root[data-rubigo-theme="rubigo"] {
+  --theme-bg: #f7faf7;
+  --theme-surface: #ffffff;
+  --theme-surface-2: #f3f8f5;
+  --theme-text: #111827;
+  --theme-muted: #6b7280;
+  --theme-border: #e5e7eb;
+  --theme-primary: #16a34a;
+  --theme-primary-soft: #dcfce7;
+  --theme-primary-deep: #0f5132;
+  --theme-accent: #f97316;
+  --theme-danger: #ef4444;
+  --theme-warning: #f59e0b;
+  --theme-shadow: 0 8px 24px rgba(17, 24, 39, 0.06);
+}
+
+:root[data-rubigo-theme="dark"] {
+  --theme-bg: #0b1110;
+  --theme-surface: #121a18;
+  --theme-surface-2: #17221f;
+  --theme-text: #f3f4f6;
+  --theme-muted: #9ca3af;
+  --theme-border: #26332f;
+  --theme-primary: #22c55e;
+  --theme-primary-soft: #17351f;
+  --theme-primary-deep: #86efac;
+  --theme-accent: #fb923c;
+  --theme-danger: #f87171;
+  --theme-warning: #fbbf24;
+  --theme-shadow: 0 10px 26px rgba(0, 0, 0, 0.28);
+}
+
+:root[data-rubigo-theme="ocean"] {
+  --theme-bg: #f0fdfa;
+  --theme-surface: #ffffff;
+  --theme-surface-2: #ecfeff;
+  --theme-text: #0f172a;
+  --theme-muted: #64748b;
+  --theme-border: #cbd5e1;
+  --theme-primary: #0f766e;
+  --theme-primary-soft: #ccfbf1;
+  --theme-primary-deep: #115e59;
+  --theme-accent: #0ea5e9;
+  --theme-danger: #ef4444;
+  --theme-warning: #d97706;
+  --theme-shadow: 0 8px 24px rgba(15, 118, 110, 0.08);
+}
+
+:root[data-rubigo-theme="sand"] {
+  --theme-bg: #faf7f0;
+  --theme-surface: #fffdf8;
+  --theme-surface-2: #f7f0e5;
+  --theme-text: #2b241b;
+  --theme-muted: #796f62;
+  --theme-border: #e5ddd0;
+  --theme-primary: #8a5a20;
+  --theme-primary-soft: #f5ead7;
+  --theme-primary-deep: #6b4216;
+  --theme-accent: #c96b2c;
+  --theme-danger: #c2413a;
+  --theme-warning: #a16207;
+  --theme-shadow: 0 8px 24px rgba(87, 61, 27, 0.08);
+}
+
+/* ---------- BASE GLOBALE ---------- */
+
+html[data-rubigo-theme],
+html[data-rubigo-theme] body,
+html[data-rubigo-theme] #root {
+  background: var(--theme-bg) !important;
+  color: var(--theme-text) !important;
+}
+
+html[data-rubigo-theme] body {
+  color-scheme: light;
+}
+
+html[data-rubigo-theme="dark"] body {
+  color-scheme: dark;
+}
+
+html[data-rubigo-theme] *,
+html[data-rubigo-theme] *::before,
+html[data-rubigo-theme] *::after {
+  border-color: var(--theme-border);
+}
+
+html[data-rubigo-theme] h1,
+html[data-rubigo-theme] h2,
+html[data-rubigo-theme] h3,
+html[data-rubigo-theme] h4,
+html[data-rubigo-theme] h5,
+html[data-rubigo-theme] h6,
+html[data-rubigo-theme] p,
+html[data-rubigo-theme] label,
+html[data-rubigo-theme] span,
+html[data-rubigo-theme] small,
+html[data-rubigo-theme] strong {
+  border-color: inherit;
+}
+
+/* ---------- STRUCTURE APP ---------- */
+
+html[data-rubigo-theme] .app-shell,
+html[data-rubigo-theme] .main-content,
+html[data-rubigo-theme] .page-content,
+html[data-rubigo-theme] .role-page {
+  background: var(--theme-bg);
+  color: var(--theme-text);
+}
+
+html[data-rubigo-theme] .topbar {
+  background: color-mix(
+    in srgb,
+    var(--theme-surface) 94%,
+    transparent
+  ) !important;
+  color: var(--theme-text) !important;
+  border-bottom-color: var(--theme-border) !important;
+}
+
+html[data-rubigo-theme] .sidebar {
+  background: var(--theme-surface) !important;
+  color: var(--theme-text) !important;
+  border-right-color: var(--theme-border) !important;
+}
+
+html[data-rubigo-theme] .sidebar *,
+html[data-rubigo-theme] .topbar * {
+  color: inherit;
+}
+
+/* ---------- NAVIGATION MOBILE ---------- */
+
+html[data-rubigo-theme] .mobile-nav {
+  background: var(--theme-surface) !important;
+  border: 1px solid var(--theme-border) !important;
+  color: var(--theme-text) !important;
+  box-shadow: var(--theme-shadow) !important;
+}
+
+html[data-rubigo-theme] .mobile-nav button {
+  color: var(--theme-muted) !important;
+}
+
+html[data-rubigo-theme] .mobile-nav button.active,
+html[data-rubigo-theme] .mobile-nav button[aria-current="page"] {
+  color: var(--theme-primary-deep) !important;
+  background: var(--theme-primary-soft) !important;
+}
+
+html[data-rubigo-theme="dark"] .mobile-nav button.active,
+html[data-rubigo-theme="dark"] .mobile-nav button[aria-current="page"] {
+  color: #17351f !important;
+  background: #d6e86a !important;
+}
+
+/* ---------- SURFACES / CARTES ---------- */
+
+html[data-rubigo-theme] .card,
+html[data-rubigo-theme] .section-block,
+html[data-rubigo-theme] .service-card,
+html[data-rubigo-theme] .merchant-card,
+html[data-rubigo-theme] .product-card,
+html[data-rubigo-theme] .order-card,
+html[data-rubigo-theme] .workflow-card,
+html[data-rubigo-theme] .stats-grid > div,
+html[data-rubigo-theme] .driver-stat-card,
+html[data-rubigo-theme] .driver-order-card,
+html[data-rubigo-theme] .empty-state,
+html[data-rubigo-theme] .order-detail-hero,
+html[data-rubigo-theme] .order-tracking-card,
+html[data-rubigo-theme] .order-items-card,
+html[data-rubigo-theme] .order-payment-card,
+html[data-rubigo-theme] .profile-section,
+html[data-rubigo-theme] .profile-card,
+html[data-rubigo-theme] .settings-section,
+html[data-rubigo-theme] .address-card,
+html[data-rubigo-theme] .merchant-full-order,
+html[data-rubigo-theme] .catalog-card,
+html[data-rubigo-theme] .merchant-order-list,
+html[data-rubigo-theme] .merchant-state-card {
+  background: var(--theme-surface) !important;
+  color: var(--theme-text) !important;
+  border-color: var(--theme-border) !important;
+  box-shadow: var(--theme-shadow);
+}
+
+/* ---------- INPUTS / SEARCH ---------- */
+
+html[data-rubigo-theme] input,
+html[data-rubigo-theme] textarea,
+html[data-rubigo-theme] select,
+html[data-rubigo-theme] .search-bar,
+html[data-rubigo-theme] .merchant-search {
+  background: var(--theme-surface) !important;
+  color: var(--theme-text) !important;
+  border-color: var(--theme-border) !important;
+}
+
+html[data-rubigo-theme] input::placeholder,
+html[data-rubigo-theme] textarea::placeholder {
+  color: var(--theme-muted) !important;
+}
+
+/* ---------- TEXTE ---------- */
+
+html[data-rubigo-theme] .muted,
+html[data-rubigo-theme] .text-muted,
+html[data-rubigo-theme] .welcome-copy,
+html[data-rubigo-theme] .section-heading p,
+html[data-rubigo-theme] .order-row-main > small,
+html[data-rubigo-theme] .merchant-location,
+html[data-rubigo-theme] .merchant-tagline {
+  color: var(--theme-muted);
+}
+
+html[data-rubigo-theme] .section-heading h2,
+html[data-rubigo-theme] .page-heading h1,
+html[data-rubigo-theme] .order-detail-page h1,
+html[data-rubigo-theme] .order-detail-page h2,
+html[data-rubigo-theme] .profile-page h1,
+html[data-rubigo-theme] .profile-page h2 {
+  color: var(--theme-text);
+}
+
+/* ---------- BOUTONS SECONDAIRES ---------- */
+
+html[data-rubigo-theme] .btn-secondary,
+html[data-rubigo-theme] .back-button,
+html[data-rubigo-theme] .text-button {
+  color: var(--theme-primary) !important;
+}
+
+html[data-rubigo-theme] .btn-secondary {
+  background: var(--theme-surface) !important;
+  border-color: var(--theme-primary) !important;
+}
+
+html[data-rubigo-theme] .btn-secondary:hover {
+  background: var(--theme-primary-soft) !important;
+}
+
+/* ---------- MODALES / DRAWERS ---------- */
+
+html[data-rubigo-theme] .modal,
+html[data-rubigo-theme] .modal-card,
+html[data-rubigo-theme] .dialog,
+html[data-rubigo-theme] .cart-drawer,
+html[data-rubigo-theme] .notifications-panel,
+html[data-rubigo-theme] .notification-panel,
+html[data-rubigo-theme] .drawer {
+  background: var(--theme-surface) !important;
+  color: var(--theme-text) !important;
+  border-color: var(--theme-border) !important;
+}
+
+html[data-rubigo-theme] .modal-backdrop,
+html[data-rubigo-theme] .modal-overlay,
+html[data-rubigo-theme] .cart-overlay {
+  background: rgba(0, 0, 0, 0.55) !important;
+}
+
+/* ---------- NOTIFICATIONS ---------- */
+
+html[data-rubigo-theme] .notification-row,
+html[data-rubigo-theme] .notification-item {
+  background: var(--theme-surface) !important;
+  color: var(--theme-text) !important;
+  border-bottom-color: var(--theme-border) !important;
+}
+
+html[data-rubigo-theme] .notification-row:hover,
+html[data-rubigo-theme] .notification-item:hover {
+  background: var(--theme-surface-2) !important;
+}
+
+html[data-rubigo-theme] .notification-delete {
+  color: var(--theme-muted) !important;
+}
+
+/* ---------- HOME ---------- */
+
+html[data-rubigo-theme] .trust-strip,
+html[data-rubigo-theme] .category-chip,
+html[data-rubigo-theme] .quick-order {
+  background: var(--theme-surface) !important;
+  color: var(--theme-text) !important;
+  border-color: var(--theme-border) !important;
+}
+
+html[data-rubigo-theme] .category-chip-icon,
+html[data-rubigo-theme] .trust-icon {
+  color: var(--theme-primary) !important;
+  background: var(--theme-primary-soft) !important;
+}
+
+/* Les héros conservent leur image/identité RUBIGO */
+html[data-rubigo-theme="dark"] .hero-slide,
+html[data-rubigo-theme="dark"] .hero-card {
+  color: #fff;
+}
+
+/* ---------- ORDERS / TRACKING ---------- */
+
+html[data-rubigo-theme] .order-list,
+html[data-rubigo-theme] .order-preview,
+html[data-rubigo-theme] .order-detail,
+html[data-rubigo-theme] .order-items,
+html[data-rubigo-theme] .order-summary,
+html[data-rubigo-theme] .order-destination,
+html[data-rubigo-theme] .order-pin-card {
+  background: var(--theme-surface) !important;
+  color: var(--theme-text) !important;
+  border-color: var(--theme-border) !important;
+}
+
+html[data-rubigo-theme] .order-preview-bottom,
+html[data-rubigo-theme] .order-item,
+html[data-rubigo-theme] .order-row,
+html[data-rubigo-theme] .order-line {
+  border-color: var(--theme-border) !important;
+}
+
+html[data-rubigo-theme] .order-status {
+  color: var(--theme-primary) !important;
+}
+
+/* ---------- PROFIL / PARAMÈTRES ---------- */
+
+html[data-rubigo-theme] .profile-action,
+html[data-rubigo-theme] .profile-menu-item,
+html[data-rubigo-theme] .settings-row,
+html[data-rubigo-theme] .address-row,
+html[data-rubigo-theme] .payment-row {
+  background: var(--theme-surface) !important;
+  color: var(--theme-text) !important;
+  border-color: var(--theme-border) !important;
+}
+
+html[data-rubigo-theme] .profile-action:hover,
+html[data-rubigo-theme] .profile-menu-item:hover,
+html[data-rubigo-theme] .settings-row:hover {
+  background: var(--theme-surface-2) !important;
+}
+
+/* ---------- LIVREUR ---------- */
+
+html[data-rubigo-theme] .driver-hero-actions {
+  background: var(--theme-primary-soft) !important;
+}
+
+html[data-rubigo-theme] .driver-hero-actions span,
+html[data-rubigo-theme] .driver-hero-actions button {
+  color: var(--theme-primary-deep) !important;
+}
+
+html[data-rubigo-theme] .driver-order-status.picked_up,
+html[data-rubigo-theme] .driver-order-status.delivering {
+  color: var(--theme-primary-deep) !important;
+  background: color-mix(
+    in srgb,
+    var(--theme-primary) 14%,
+    transparent
+  ) !important;
+}
+
+html[data-rubigo-theme] .driver-pin-card {
+  background: var(--theme-primary-soft) !important;
+  color: var(--theme-text) !important;
+}
+
+html[data-rubigo-theme] .driver-pin-card input {
+  background: var(--theme-surface) !important;
+  color: var(--theme-text) !important;
+  border-color: var(--theme-border) !important;
+}
+
+html[data-rubigo-theme] .driver-step-node {
+  background: var(--theme-surface) !important;
+  border-color: var(--theme-border) !important;
+}
+
+html[data-rubigo-theme] .driver-step strong {
+  color: var(--theme-text) !important;
+}
+
+html[data-rubigo-theme] .driver-step small {
+  color: var(--theme-muted) !important;
+}
+
+html[data-rubigo-theme] .driver-step-line {
+  background: var(--theme-border) !important;
+}
+
+html[data-rubigo-theme] .driver-step-line.done,
+html[data-rubigo-theme] .driver-step.done .driver-step-node,
+html[data-rubigo-theme] .driver-step.current .driver-step-node {
+  background: var(--theme-primary) !important;
+  border-color: var(--theme-primary) !important;
+}
+
+/* ---------- MERCHANT : VARIABLES LOCALES ---------- */
+
+html[data-rubigo-theme] .merchant-dashboard {
+  --green: var(--theme-primary);
+  --green-deep: var(--theme-primary-deep);
+  --green-soft: var(--theme-primary-soft);
+  --lime: var(--rubigo-lime, #d6e86a);
+  --lime-soft: var(--theme-primary-soft);
+  --orange: var(--theme-accent);
+  --cream: var(--theme-bg);
+  --ink: var(--theme-text);
+  --muted: var(--theme-muted);
+  --line: var(--theme-border);
+}
+
+html[data-rubigo-theme] .merchant-order-list,
+html[data-rubigo-theme] .merchant-order-row,
+html[data-rubigo-theme] .merchant-search,
+html[data-rubigo-theme] .merchant-filter-row button,
+html[data-rubigo-theme] .catalog-card,
+html[data-rubigo-theme] .catalog-actions button {
+  background: var(--theme-surface) !important;
+  color: var(--theme-text) !important;
+  border-color: var(--theme-border) !important;
+}
+
+html[data-rubigo-theme] .merchant-order-row + .merchant-order-row {
+  border-top-color: var(--theme-border) !important;
+}
+
+html[data-rubigo-theme] .merchant-state-card {
+  background: var(--theme-surface) !important;
+  color: var(--theme-muted) !important;
+  border-color: var(--theme-border) !important;
+}
+
+/* Le hero marchand garde sa composition verte même en mode sombre */
+html[data-rubigo-theme="dark"] .merchant-reference-hero {
+  background: linear-gradient(
+    145deg,
+    #064d42 0%,
+    #075b4f 55%,
+    #043c35 100%
+  ) !important;
+}
+
+html[data-rubigo-theme="dark"] .merchant-today-card {
+  background: #17351f !important;
+  color: #9df49f !important;
+}
+
+/* ---------- DARK : PRÉSERVATION DES HERO / CTA ---------- */
+
+html[data-rubigo-theme="dark"] .primary-button,
+html[data-rubigo-theme="dark"] .btn-primary,
+html[data-rubigo-theme="dark"] .btn-accent {
+  color: #ffffff !important;
+}
+
+/* ---------- TRANSITION DISCRÈTE ---------- */
+
+html[data-rubigo-theme] body,
+html[data-rubigo-theme] .app-shell,
+html[data-rubigo-theme] .main-content,
+html[data-rubigo-theme] .mobile-nav,
+html[data-rubigo-theme] .topbar,
+html[data-rubigo-theme] .sidebar,
+html[data-rubigo-theme] .card {
+  transition:
+    background-color 0.18s ease,
+    border-color 0.18s ease,
+    color 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+/* Respect de la préférence "réduire les animations" */
+html[data-reduce-motion="true"] *,
+html[data-reduce-motion="true"] *::before,
+html[data-reduce-motion="true"] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
