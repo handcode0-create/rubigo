@@ -1,25 +1,26 @@
-import { useState } from 'react'
+import { useState } from "react";
 
-import { products } from '../data'
-import { useApp } from '../context/AppContext'
-import { ProductCard } from '../components/Cards'
-import { AddressPicker } from '../components/maps/AddressPicker'
-import { formatCurrency } from '../utils/formatCurrency'
-import type { Address, Merchant, Product } from '../types'
-import './Details.css'
+import { useApp } from "../context/AppContext";
+import { ProductCard } from "../components/Cards";
+import { AddressPicker } from "../components/maps/AddressPicker";
+import { formatCurrency } from "../utils/formatCurrency";
+import type { Address, Merchant, Product } from "../types";
+import "./Details.css";
 
 export function MerchantDetail({
   merchant,
   onBack,
   onProduct,
 }: {
-  merchant: Merchant
-  onBack: () => void
-  onProduct: (product: Product) => void
+  merchant: Merchant;
+  onBack: () => void;
+  onProduct: (product: Product) => void;
 }) {
+  const { products } = useApp();
+
   const merchantProducts = products.filter(
     (product) => product.merchantId === merchant.id,
-  )
+  );
 
   return (
     <div className="page-content detail-page">
@@ -35,7 +36,7 @@ export function MerchantDetail({
             className="merchant-hero-image"
             loading="eager"
             onError={(event) => {
-              event.currentTarget.style.display = 'none'
+              event.currentTarget.style.display = "none";
             }}
           />
         ) : null}
@@ -44,8 +45,8 @@ export function MerchantDetail({
 
         <span className="merchant-mark">{merchant.initials}</span>
 
-        <span className={merchant.isOpen ? 'open-tag' : 'closed-tag'}>
-          {merchant.isOpen ? 'Ouvert' : 'Fermé'}
+        <span className={merchant.isOpen ? "open-tag" : "closed-tag"}>
+          {merchant.isOpen ? "Ouvert" : "Fermé"}
         </span>
       </div>
 
@@ -85,7 +86,7 @@ export function MerchantDetail({
         ))}
       </div>
     </div>
-  )
+  );
 }
 
 export function ProductDetail({
@@ -93,14 +94,14 @@ export function ProductDetail({
   onBack,
   onCheckout,
 }: {
-  product: Product
-  onBack: () => void
-  onCheckout: () => void
+  product: Product;
+  onBack: () => void;
+  onCheckout: () => void;
 }) {
-  const { addToCart } = useApp()
-  const [quantity, setQuantity] = useState(1)
+  const { addToCart } = useApp();
+  const [quantity, setQuantity] = useState(1);
 
-  const total = product.price * quantity
+  const total = product.price * quantity;
 
   return (
     <div className="page-content detail-page">
@@ -116,13 +117,11 @@ export function ProductDetail({
             className="product-detail-image"
             loading="eager"
             onError={(event) => {
-              event.currentTarget.style.display = 'none'
+              event.currentTarget.style.display = "none";
             }}
           />
         ) : (
-          <span>
-            {product.category === 'Boissons' ? 'BO' : 'FO'}
-          </span>
+          <span>{product.category === "Boissons" ? "BO" : "FO"}</span>
         )}
       </div>
 
@@ -137,25 +136,18 @@ export function ProductDetail({
         <span>Quantité</span>
 
         <div className="quantity-selector">
-          <button
-            onClick={() =>
-              setQuantity(Math.max(1, quantity - 1))
-            }
-          >
+          <button onClick={() => setQuantity(Math.max(1, quantity - 1))}>
             −
           </button>
 
           <strong>{quantity}</strong>
 
-          <button onClick={() => setQuantity(quantity + 1)}>
-            ＋
-          </button>
+          <button onClick={() => setQuantity(quantity + 1)}>＋</button>
         </div>
       </div>
 
       <label className="notes-field">
         Instructions particulières
-
         <textarea placeholder="Ex. Sans piment, s’il vous plaît." />
       </label>
 
@@ -167,61 +159,55 @@ export function ProductDetail({
             name: product.name,
             quantity,
             unitPrice: product.price,
-          })
+          });
 
-          onCheckout()
+          onCheckout();
         }}
       >
         Ajouter au panier · {formatCurrency(total)}
       </button>
     </div>
-  )
+  );
 }
 
 export function Checkout({
   onBack,
   onDone,
 }: {
-  onBack: () => void
-  onDone: () => void
+  onBack: () => void;
+  onDone: () => void;
 }) {
-  const {
-    user,
-    cartTotal,
-    estimateDeliveryFee,
-    placeOrder,
-  } = useApp()
+  const { user, cartTotal, estimateDeliveryFee, placeOrder } = useApp();
 
-  const [step, setStep] = useState(1)
-  const [submitting, setSubmitting] = useState(false)
-  const [orderError, setOrderError] = useState('')
+  const [step, setStep] = useState(1);
+  const [submitting, setSubmitting] = useState(false);
+  const [orderError, setOrderError] = useState("");
 
-  const [selectedAddress, setSelectedAddress] =
-    useState<Address | undefined>(
-      user.addresses?.find(
-        (address) => address.isDefault,
-      ),
-    )
+  const [selectedAddress, setSelectedAddress] = useState<Address | undefined>(
+    user.addresses?.find((address) => address.isDefault),
+  );
 
-  const deliveryFee = estimateDeliveryFee(selectedAddress)
-  const total = cartTotal + deliveryFee
+  const deliveryFee = estimateDeliveryFee(selectedAddress);
+  const total = cartTotal + deliveryFee;
 
   const confirm = async () => {
     if (step < 4) {
-      setStep(step + 1)
-      return
+      setStep(step + 1);
+      return;
     }
-    if (!selectedAddress) return
-    setOrderError('')
-    setSubmitting(true)
-    const order = await placeOrder(selectedAddress)
-    setSubmitting(false)
+    if (!selectedAddress) return;
+    setOrderError("");
+    setSubmitting(true);
+    const order = await placeOrder(selectedAddress);
+    setSubmitting(false);
     if (!order) {
-      setOrderError("Impossible de confirmer votre commande pour le moment. Réessayez.")
-      return
+      setOrderError(
+        "Impossible de confirmer votre commande pour le moment. Réessayez.",
+      );
+      return;
     }
-    onDone()
-  }
+    onDone();
+  };
 
   return (
     <div className="page-content detail-page">
@@ -236,19 +222,13 @@ export function Checkout({
       </section>
 
       <div className="checkout-steps">
-        {[
-          'Adresse',
-          'Livraison',
-          'Paiement',
-          'Confirmation',
-        ].map((label, index) => (
-          <span
-            className={step >= index + 1 ? 'active' : ''}
-            key={label}
-          >
-            {index + 1}. {label}
-          </span>
-        ))}
+        {["Adresse", "Livraison", "Paiement", "Confirmation"].map(
+          (label, index) => (
+            <span className={step >= index + 1 ? "active" : ""} key={label}>
+              {index + 1}. {label}
+            </span>
+          ),
+        )}
       </div>
 
       <AddressPicker
@@ -260,11 +240,8 @@ export function Checkout({
       <div className="checkout-card">
         <label>
           Mode de livraison
-
           <select defaultValue="standard">
-            <option value="standard">
-              Standard
-            </option>
+            <option value="standard">Standard</option>
 
             <option value="express" disabled>
               Express · bientôt disponible
@@ -274,15 +251,10 @@ export function Checkout({
 
         <label>
           Paiement
-
           <select defaultValue="delivery">
-            <option value="delivery">
-              Paiement à la livraison
-            </option>
+            <option value="delivery">Paiement à la livraison</option>
 
-            <option value="mobile">
-              Mobile Money · bientôt disponible
-            </option>
+            <option value="mobile">Mobile Money · bientôt disponible</option>
           </select>
         </label>
       </div>
@@ -309,7 +281,11 @@ export function Checkout({
         disabled={!selectedAddress || submitting}
         onClick={confirm}
       >
-        {submitting ? 'Confirmation…' : step < 4 ? 'Continuer' : 'Confirmer la commande'}
+        {submitting
+          ? "Confirmation…"
+          : step < 4
+            ? "Continuer"
+            : "Confirmer la commande"}
       </button>
 
       {orderError ? (
@@ -324,5 +300,5 @@ export function Checkout({
         </p>
       ) : null}
     </div>
-  )
+  );
 }
