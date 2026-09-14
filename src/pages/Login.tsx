@@ -1,103 +1,165 @@
-import { useState, type FormEvent } from 'react'
-import { useApp } from '../context/AppContext'
-import './Login.css'
+import { useState, type FormEvent } from "react";
+import { useApp } from "../context/AppContext";
+import { RoleSelection, type RegistrationRole } from "./RoleSelection";
+import "./Login.css";
 
-type Mode = 'login' | 'register'
+type Mode = "login" | "register";
+type RegisterStep = "details" | "roles";
 
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export function Login() {
-  const { login, register } = useApp()
+  const { login, register } = useApp();
 
-  const [mode, setMode] = useState<Mode>('login')
-  const [submitting, setSubmitting] = useState(false)
-  const [showPassword, setShowPassword] = useState(false)
-  const [error, setError] = useState('')
-  const [info, setInfo] = useState('')
+  const [mode, setMode] = useState<Mode>("login");
+  const [registerStep, setRegisterStep] = useState<RegisterStep>("details");
+  const [selectedRoles, setSelectedRoles] = useState<RegistrationRole[]>([
+    "customer",
+  ]);
+  const [submitting, setSubmitting] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState("");
+  const [info, setInfo] = useState("");
 
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [fullName, setFullName] = useState('')
-  const [phone, setPhone] = useState('')
-  const [confirmPassword, setConfirmPassword] = useState('')
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [fullName, setFullName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
 
   const resetMessages = () => {
-    setError('')
-    setInfo('')
-  }
+    setError("");
+    setInfo("");
+  };
+
+  const resetRegistrationFlow = () => {
+    setRegisterStep("details");
+    setSelectedRoles(["customer"]);
+    setSubmitting(false);
+  };
 
   const switchMode = (nextMode: Mode) => {
-    setMode(nextMode)
-    resetMessages()
-    setPassword('')
-    setConfirmPassword('')
-  }
+    setMode(nextMode);
+    resetMessages();
+    setPassword("");
+    setConfirmPassword("");
+    resetRegistrationFlow();
+  };
 
   const submitLogin = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
-    resetMessages()
+    event.preventDefault();
+    resetMessages();
 
     if (!email.trim() || !password) {
-      setError('Merci de renseigner votre e-mail et votre mot de passe.')
-      return
+      setError("Merci de renseigner votre e-mail et votre mot de passe.");
+      return;
     }
 
-    setSubmitting(true)
-    const result = await login(email, password)
-    setSubmitting(false)
+    setSubmitting(true);
+    const result = await login(email, password);
+    setSubmitting(false);
 
     if (!result.ok) {
-      setError(result.message ?? 'Adresse e-mail ou mot de passe incorrect.')
+      setError(result.message ?? "Adresse e-mail ou mot de passe incorrect.");
     }
-  }
+  };
 
-  const submitRegister = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
-    resetMessages()
-
+  const validateRegisterDetails = () => {
     if (!fullName.trim()) {
-      setError('Merci de renseigner votre nom complet.')
-      return
+      setError("Merci de renseigner votre nom complet.");
+      return false;
     }
     if (!phone.trim()) {
-      setError('Merci de renseigner votre numéro de téléphone.')
-      return
+      setError("Merci de renseigner votre numéro de téléphone.");
+      return false;
     }
     if (!EMAIL_PATTERN.test(email.trim())) {
-      setError('Merci de renseigner une adresse e-mail valide.')
-      return
+      setError("Merci de renseigner une adresse e-mail valide.");
+      return false;
     }
     if (password.length < 6) {
-      setError('Le mot de passe doit contenir au moins 6 caractères.')
-      return
+      setError("Le mot de passe doit contenir au moins 6 caractères.");
+      return false;
     }
     if (password !== confirmPassword) {
-      setError('Les mots de passe ne correspondent pas.')
-      return
+      setError("Les mots de passe ne correspondent pas.");
+      return false;
+    }
+    return true;
+  };
+
+  const continueToRoleSelection = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    resetMessages();
+
+    if (!validateRegisterDetails()) return;
+    setRegisterStep("roles");
+  };
+
+  const submitRegister = async (roles: RegistrationRole[]) => {
+    resetMessages();
+
+    if (!roles.length) {
+      setError("Sélectionnez au moins un profil pour continuer.");
+      return;
     }
 
-    setSubmitting(true)
-    const result = await register(fullName.trim(), phone.trim(), email.trim(), password)
-    setSubmitting(false)
+    sessionStorage.setItem("rubigo_requested_roles", JSON.stringify(roles));
+
+    setSelectedRoles(roles);
+    setSubmitting(true);
+
+    const result = await register(
+      fullName.trim(),
+      phone.trim(),
+      email.trim(),
+      password,
+    );
+
+    setSubmitting(false);
 
     if (!result.ok) {
-      setError(result.message ?? 'Impossible de créer votre compte pour le moment.')
-      return
+      setError(
+        result.message ?? "Impossible de créer votre compte pour le moment.",
+      );
+      setRegisterStep("roles");
+      return;
     }
 
     if (result.needsEmailConfirmation) {
-      setInfo('Compte créé. Vérifiez votre boîte e-mail pour confirmer votre adresse avant de vous connecter.')
-      setMode('login')
-      setPassword('')
-      setConfirmPassword('')
-      return
+      setInfo(
+        "Compte créé. Vérifiez votre boîte e-mail pour confirmer votre adresse avant de vous connecter.",
+      );
+      setMode("login");
+      setRegisterStep("details");
+      setPassword("");
+      setConfirmPassword("");
+      setSelectedRoles(["customer"]);
+      return;
     }
 
-    // Si la confirmation e-mail est désactivée sur le projet Supabase, la session
-    // est immédiatement active : onAuthStateChange (AppContext) prend le relais.
-  }
+    // Si la confirmation e-mail est désactivée sur le projet Supabase,
+    // la session est immédiatement active : onAuthStateChange (AppContext)
+    // prend le relais.
+  };
 
-  const isLogin = mode === 'login'
+  const isLogin = mode === "login";
+
+  if (!isLogin && registerStep === "roles") {
+    return (
+      <RoleSelection
+        selectedRoles={selectedRoles}
+        onRolesChange={setSelectedRoles}
+        onBack={() => {
+          resetMessages();
+          setRegisterStep("details");
+        }}
+        onContinue={submitRegister}
+        submitting={submitting}
+        error={error}
+      />
+    );
+  }
 
   return (
     <main className="login-page">
@@ -117,21 +179,9 @@ export function Login() {
           </h1>
 
           <p>
-            Commandez auprès de vos commerces préférés.
-            RUBIGO s’occupe du reste.
+            Commandez auprès de vos commerces préférés. RUBIGO s’occupe du
+            reste.
           </p>
-
-          <button
-            type="button"
-            className="login-art-cta"
-            onClick={() => {
-              document.getElementById('login-email')?.focus()
-              document.getElementById('login-email')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-            }}
-          >
-            <span>Commencer</span>
-            <b>→</b>
-          </button>
         </div>
 
         <span className="login-art-stamp">
@@ -139,25 +189,18 @@ export function Login() {
           <br />
           <b>LOCAL DELIVERY</b>
         </span>
-
-        <img
-          src="/login-rider.jpg"
-          alt="Livreur RUBIGO sur la route"
-          className="login-art-photo"
-        />
-        <div className="login-art-photo-scrim" aria-hidden="true" />
       </section>
 
       <section className="login-form-wrap">
         <div className="login-form-card">
           <p className="eyebrow">BIENVENUE CHEZ RUBIGO</p>
 
-          <h2>{isLogin ? 'Connectez-vous' : 'Créer un compte'}</h2>
+          <h2>{isLogin ? "Connectez-vous" : "Créer un compte"}</h2>
 
           <p className="login-intro">
             {isLogin
-              ? 'Entrez vos identifiants pour accéder à votre compte.'
-              : 'Renseignez vos informations pour commencer à commander.'}
+              ? "Entrez vos identifiants pour accéder à votre compte."
+              : "Renseignez vos informations pour commencer à commander."}
           </p>
 
           {isLogin ? (
@@ -165,7 +208,6 @@ export function Login() {
               <label>
                 Email
                 <input
-                  id="login-email"
                   type="email"
                   value={email}
                   onChange={(event) => setEmail(event.target.value)}
@@ -178,7 +220,7 @@ export function Login() {
                 Mot de passe
                 <div className="password-field">
                   <input
-                    type={showPassword ? 'text' : 'password'}
+                    type={showPassword ? "text" : "password"}
                     value={password}
                     onChange={(event) => setPassword(event.target.value)}
                     autoComplete="current-password"
@@ -187,9 +229,13 @@ export function Login() {
                   <button
                     type="button"
                     onClick={() => setShowPassword((value) => !value)}
-                    aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
+                    aria-label={
+                      showPassword
+                        ? "Masquer le mot de passe"
+                        : "Afficher le mot de passe"
+                    }
                   >
-                    {showPassword ? 'Masquer' : 'Voir'}
+                    {showPassword ? "Masquer" : "Voir"}
                   </button>
                 </div>
               </label>
@@ -201,13 +247,17 @@ export function Login() {
               )}
               {info && <p className="login-info">{info}</p>}
 
-              <button className="login-submit" type="submit" disabled={submitting}>
-                {submitting ? 'Connexion…' : 'Se connecter'}
+              <button
+                className="login-submit"
+                type="submit"
+                disabled={submitting}
+              >
+                {submitting ? "Connexion…" : "Se connecter"}
                 {!submitting && <span>→</span>}
               </button>
             </form>
           ) : (
-            <form onSubmit={submitRegister}>
+            <form onSubmit={continueToRoleSelection}>
               <label>
                 Nom complet
                 <input
@@ -246,7 +296,7 @@ export function Login() {
                 Mot de passe
                 <div className="password-field">
                   <input
-                    type={showPassword ? 'text' : 'password'}
+                    type={showPassword ? "text" : "password"}
                     value={password}
                     onChange={(event) => setPassword(event.target.value)}
                     autoComplete="new-password"
@@ -255,9 +305,13 @@ export function Login() {
                   <button
                     type="button"
                     onClick={() => setShowPassword((value) => !value)}
-                    aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
+                    aria-label={
+                      showPassword
+                        ? "Masquer le mot de passe"
+                        : "Afficher le mot de passe"
+                    }
                   >
-                    {showPassword ? 'Masquer' : 'Voir'}
+                    {showPassword ? "Masquer" : "Voir"}
                   </button>
                 </div>
               </label>
@@ -265,7 +319,7 @@ export function Login() {
               <label>
                 Confirmer le mot de passe
                 <input
-                  type={showPassword ? 'text' : 'password'}
+                  type={showPassword ? "text" : "password"}
                   value={confirmPassword}
                   onChange={(event) => setConfirmPassword(event.target.value)}
                   autoComplete="new-password"
@@ -280,8 +334,12 @@ export function Login() {
               )}
               {info && <p className="login-info">{info}</p>}
 
-              <button className="login-submit" type="submit" disabled={submitting}>
-                {submitting ? 'Création du compte…' : 'Créer mon compte'}
+              <button
+                className="login-submit"
+                type="submit"
+                disabled={submitting}
+              >
+                Continuer
                 {!submitting && <span>→</span>}
               </button>
             </form>
@@ -290,12 +348,14 @@ export function Login() {
           <button
             type="button"
             className="auth-switch"
-            onClick={() => switchMode(isLogin ? 'register' : 'login')}
+            onClick={() => switchMode(isLogin ? "register" : "login")}
           >
-            {isLogin ? 'Pas encore de compte ? Créer un compte' : 'Déjà un compte ? Se connecter'}
+            {isLogin
+              ? "Pas encore de compte ? Créer un compte"
+              : "Déjà un compte ? Se connecter"}
           </button>
         </div>
       </section>
     </main>
-  )
+  );
 }
