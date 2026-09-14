@@ -492,3 +492,412 @@ html[data-reduce-motion="true"] *::after {
   transition-duration: 0.01ms !important;
   scroll-behavior: auto !important;
 }
+
+/* =========================================================
+   PROFIL CLIENT — THÈMES COMPLETS
+   Profile.tsx utilise des classes spécifiques qui avaient
+   encore des couleurs/ombres figées dans App.css.
+   ========================================================= */
+
+html[data-rubigo-theme] .profile-header-row,
+html[data-rubigo-theme] .profile-identity,
+html[data-rubigo-theme] .profile-actions,
+html[data-rubigo-theme] .address-section {
+  color: var(--theme-text);
+}
+
+html[data-rubigo-theme] .profile-header-row h1,
+html[data-rubigo-theme] .profile-identity h2,
+html[data-rubigo-theme] .address-section h2,
+html[data-rubigo-theme] .profile-summary-stat strong {
+  color: var(--theme-text) !important;
+}
+
+html[data-rubigo-theme] .profile-edit-trigger {
+  color: var(--theme-primary) !important;
+  background: var(--theme-primary-soft) !important;
+}
+
+html[data-rubigo-theme] .profile-edit-trigger:hover {
+  color: #ffffff !important;
+  background: var(--theme-primary) !important;
+}
+
+html[data-rubigo-theme] .profile-avatar {
+  color: #ffffff !important;
+  background: var(--theme-primary) !important;
+  box-shadow: 0 8px 20px -6px rgba(0, 0, 0, 0.28) !important;
+}
+
+html[data-rubigo-theme] .profile-contact,
+html[data-rubigo-theme] .profile-summary-stat span {
+  color: var(--theme-muted) !important;
+}
+
+html[data-rubigo-theme] .profile-location-badge {
+  color: var(--theme-primary-deep) !important;
+  background: var(--theme-primary-soft) !important;
+}
+
+html[data-rubigo-theme] .profile-summary-card {
+  background: var(--theme-surface) !important;
+  color: var(--theme-text) !important;
+  border-color: var(--theme-border) !important;
+  box-shadow: var(--theme-shadow) !important;
+}
+
+html[data-rubigo-theme] .profile-summary-divider {
+  background: var(--theme-border) !important;
+}
+
+html[data-rubigo-theme] .profile-action-card {
+  background: var(--theme-surface) !important;
+  color: var(--theme-text) !important;
+  border-color: var(--theme-border) !important;
+  box-shadow: var(--theme-shadow) !important;
+}
+
+html[data-rubigo-theme] .profile-action-card:hover {
+  border-color: var(--theme-primary) !important;
+  box-shadow: var(--theme-shadow) !important;
+}
+
+html[data-rubigo-theme] .action-copy strong {
+  color: var(--theme-text) !important;
+}
+
+html[data-rubigo-theme] .action-copy small,
+html[data-rubigo-theme] .action-chevron {
+  color: var(--theme-muted) !important;
+}
+
+/* Les couleurs d'accent des icônes restent distinctes,
+   mais leurs fonds deviennent compatibles avec le thème. */
+html[data-rubigo-theme="dark"] .profile-action-card.coral .action-icon {
+  color: #fdba74 !important;
+  background: #4a2418 !important;
+}
+
+html[data-rubigo-theme="dark"] .profile-action-card.lime .action-icon {
+  color: #d6e86a !important;
+  background: #28351b !important;
+}
+
+html[data-rubigo-theme="dark"] .profile-action-card.blue .action-icon {
+  color: #93c5fd !important;
+  background: #172b45 !important;
+}
+
+html[data-rubigo-theme="dark"] .profile-action-card.gold .action-icon {
+  color: #fcd34d !important;
+  background: #3d3016 !important;
+}
+
+html[data-rubigo-theme="ocean"] .profile-action-card.coral .action-icon {
+  color: #c2410c !important;
+  background: #ffedd5 !important;
+}
+
+html[data-rubigo-theme="ocean"] .profile-action-card.blue .action-icon {
+  color: #0369a1 !important;
+  background: #dff6ff !important;
+}
+
+html[data-rubigo-theme="sand"] .profile-action-card.blue .action-icon {
+  color: #315a8a !important;
+  background: #e4edf7 !important;
+}
+
+/* Formulaires du profil */
+html[data-rubigo-theme] .profile-edit-form input,
+html[data-rubigo-theme] .address-form input {
+  background: var(--theme-surface) !important;
+  color: var(--theme-text) !important;
+  border-color: var(--theme-border) !important;
+}
+
+html[data-rubigo-theme] .profile-edit-form input::placeholder,
+html[data-rubigo-theme] .address-form input::placeholder {
+  color: var(--theme-muted) !important;
+}
+
+html[data-rubigo-theme] .profile-edit-actions button:first-child,
+html[data-rubigo-theme] .address-form button {
+  color: #ffffff !important;
+  background: var(--theme-primary) !important;
+}
+
+html[data-rubigo-theme] .profile-edit-actions button:last-child {
+  color: var(--theme-text) !important;
+  background: var(--theme-surface-2) !important;
+}
+
+html[data-rubigo-theme] .profile-note {
+  color: var(--theme-text) !important;
+  background: var(--theme-primary-soft) !important;
+}
+
+html[data-rubigo-theme] .profile-note.error {
+  color: var(--theme-danger) !important;
+  background: color-mix(
+    in srgb,
+    var(--theme-danger) 10%,
+    transparent
+  ) !important;
+}
+
+/* Adresses */
+html[data-rubigo-theme] .address-row {
+  border-bottom-color: var(--theme-border) !important;
+}
+
+html[data-rubigo-theme] .address-row > span {
+  color: var(--theme-accent) !important;
+}
+
+html[data-rubigo-theme] .address-row strong {
+  color: var(--theme-text) !important;
+}
+
+html[data-rubigo-theme] .address-row p {
+  color: var(--theme-muted) !important;
+}
+
+html[data-rubigo-theme] .address-row small {
+  color: var(--theme-primary-deep) !important;
+  background: var(--theme-primary-soft) !important;
+}
+
+html[data-rubigo-theme] .address-row button {
+  color: var(--theme-accent) !important;
+  background: transparent !important;
+}
+
+html[data-rubigo-theme] .address-row button:last-child {
+  color: var(--theme-danger) !important;
+}
+
+/* Déconnexion */
+html[data-rubigo-theme] .logout-button {
+  color: var(--theme-danger) !important;
+}
+
+/* En mode sombre, les surfaces ne doivent plus revenir au blanc */
+html[data-rubigo-theme="dark"] .profile-action-card,
+html[data-rubigo-theme="dark"] .profile-summary-card,
+html[data-rubigo-theme="dark"] .address-form input,
+html[data-rubigo-theme="dark"] .profile-edit-form input {
+  background: #121a18 !important;
+}
+
+/* =========================================================
+   HOME CLIENT — ADAPTATION THÈMES
+   Couvre les composants visibles dans Home.tsx :
+   welcome, recherche, trust strip, catégories, services,
+   commerces, produits et commande active.
+   ========================================================= */
+
+/* Page et zones principales */
+html[data-rubigo-theme] .page-content {
+  background: var(--theme-bg);
+  color: var(--theme-text);
+}
+
+html[data-rubigo-theme] .welcome-row h1,
+html[data-rubigo-theme] .welcome-copy,
+html[data-rubigo-theme] .section-heading h2 {
+  color: var(--theme-text) !important;
+}
+
+html[data-rubigo-theme] .welcome-copy,
+html[data-rubigo-theme] .section-heading .eyebrow,
+html[data-rubigo-theme] .eyebrow {
+  color: var(--theme-muted);
+}
+
+html[data-rubigo-theme] .sparkle-accent {
+  color: var(--theme-primary) !important;
+}
+
+/* Panier rapide */
+html[data-rubigo-theme] .quick-order {
+  color: var(--theme-text) !important;
+  background: var(--theme-surface) !important;
+  border: 1px solid var(--theme-border) !important;
+  box-shadow: var(--theme-shadow) !important;
+}
+
+html[data-rubigo-theme] .quick-order svg {
+  color: var(--theme-primary) !important;
+}
+
+/* Recherche */
+html[data-rubigo-theme] .search-bar {
+  color: var(--theme-muted) !important;
+  background: var(--theme-surface) !important;
+  border: 1px solid var(--theme-border) !important;
+  box-shadow: var(--theme-shadow) !important;
+}
+
+html[data-rubigo-theme] .search-icon-wrap {
+  color: var(--theme-primary) !important;
+  background: var(--theme-primary-soft) !important;
+}
+
+html[data-rubigo-theme] .search-action-hint {
+  color: var(--theme-primary) !important;
+  background: var(--theme-primary-soft) !important;
+}
+
+/* Bandeau préparation / livraison / PIN */
+html[data-rubigo-theme] .trust-strip {
+  color: var(--theme-text) !important;
+  background: var(--theme-surface) !important;
+  border: 1px solid var(--theme-border) !important;
+  box-shadow: var(--theme-shadow) !important;
+}
+
+html[data-rubigo-theme] .trust-step strong {
+  color: var(--theme-text) !important;
+}
+
+html[data-rubigo-theme] .trust-step small {
+  color: var(--theme-muted) !important;
+}
+
+html[data-rubigo-theme] .trust-icon {
+  color: var(--theme-primary) !important;
+  background: var(--theme-primary-soft) !important;
+}
+
+html[data-rubigo-theme] .trust-icon.active {
+  color: #ffffff !important;
+  background: var(--theme-primary) !important;
+}
+
+/* Titres / liens de section */
+html[data-rubigo-theme] .text-button {
+  color: var(--theme-primary) !important;
+  background: transparent !important;
+}
+
+html[data-rubigo-theme] .text-button svg {
+  color: currentColor !important;
+}
+
+/* Catégories */
+html[data-rubigo-theme] .category-scroll {
+  color: var(--theme-text);
+}
+
+html[data-rubigo-theme] .category-chip {
+  color: var(--theme-text) !important;
+  background: var(--theme-surface) !important;
+  border: 1px solid var(--theme-border) !important;
+  box-shadow: var(--theme-shadow) !important;
+}
+
+html[data-rubigo-theme] .category-chip:hover,
+html[data-rubigo-theme] .category-chip:focus-visible {
+  border-color: var(--theme-primary) !important;
+  background: var(--theme-primary-soft) !important;
+}
+
+html[data-rubigo-theme] .category-chip-icon {
+  color: var(--theme-primary) !important;
+  background: var(--theme-primary-soft) !important;
+}
+
+/* Services */
+html[data-rubigo-theme] .service-grid {
+  color: var(--theme-text);
+}
+
+html[data-rubigo-theme] .service-grid > *,
+html[data-rubigo-theme] .service-card {
+  color: var(--theme-text) !important;
+  border-color: var(--theme-border) !important;
+}
+
+/* Commerces */
+html[data-rubigo-theme] .merchant-grid > *,
+html[data-rubigo-theme] .merchant-card {
+  background: var(--theme-surface) !important;
+  color: var(--theme-text) !important;
+  border-color: var(--theme-border) !important;
+  box-shadow: var(--theme-shadow) !important;
+}
+
+html[data-rubigo-theme] .merchant-card h3,
+html[data-rubigo-theme] .merchant-card strong {
+  color: var(--theme-text) !important;
+}
+
+html[data-rubigo-theme] .merchant-card p,
+html[data-rubigo-theme] .merchant-card small {
+  color: var(--theme-muted) !important;
+}
+
+/* Produits */
+html[data-rubigo-theme] .product-list > *,
+html[data-rubigo-theme] .product-card {
+  background: var(--theme-surface) !important;
+  color: var(--theme-text) !important;
+  border-color: var(--theme-border) !important;
+  box-shadow: var(--theme-shadow) !important;
+}
+
+html[data-rubigo-theme] .product-card h3,
+html[data-rubigo-theme] .product-card strong {
+  color: var(--theme-text) !important;
+}
+
+html[data-rubigo-theme] .product-card p,
+html[data-rubigo-theme] .product-card small {
+  color: var(--theme-muted) !important;
+}
+
+/* Carte commande active */
+html[data-rubigo-theme] .order-card {
+  background: var(--theme-surface) !important;
+  color: var(--theme-text) !important;
+  border-color: var(--theme-border) !important;
+  box-shadow: var(--theme-shadow) !important;
+}
+
+html[data-rubigo-theme] .order-card strong,
+html[data-rubigo-theme] .order-card h3 {
+  color: var(--theme-text) !important;
+}
+
+html[data-rubigo-theme] .order-card p,
+html[data-rubigo-theme] .order-card small {
+  color: var(--theme-muted) !important;
+}
+
+/* Mode sombre : éviter que certains composants enfants
+   imposent leurs surfaces blanches */
+html[data-rubigo-theme="dark"] .quick-order,
+html[data-rubigo-theme="dark"] .search-bar,
+html[data-rubigo-theme="dark"] .trust-strip,
+html[data-rubigo-theme="dark"] .category-chip,
+html[data-rubigo-theme="dark"] .merchant-card,
+html[data-rubigo-theme="dark"] .product-card,
+html[data-rubigo-theme="dark"] .order-card {
+  background: #121a18 !important;
+}
+
+html[data-rubigo-theme="dark"] .service-card {
+  background: #121a18 !important;
+}
+
+html[data-rubigo-theme="dark"] .search-icon-wrap,
+html[data-rubigo-theme="dark"] .search-action-hint,
+html[data-rubigo-theme="dark"] .category-chip-icon,
+html[data-rubigo-theme="dark"] .trust-icon {
+  background: #17351f !important;
+}
+
+html[data-rubigo-theme="dark"] .trust-icon.active {
+  background: #22c55e !important;
+}

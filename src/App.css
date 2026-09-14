@@ -19,7 +19,7 @@
   --rubigo-info-light: #dbeafe;
   --rubigo-danger: #ef4444;
   --rubigo-success: #16a34a;
-  
+
   /* Rayons standardisés */
   --rubigo-radius: 12px;
   --rubigo-radius-sm: 8px;
@@ -28,8 +28,12 @@
 
   /* Ombres subtiles */
   --rubigo-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --rubigo-shadow: 0 4px 16px -2px rgba(17, 24, 39, 0.06), 0 2px 6px -1px rgba(17, 24, 39, 0.04);
-  --rubigo-shadow-lg: 0 12px 28px -4px rgba(17, 24, 39, 0.1), 0 6px 12px -2px rgba(17, 24, 39, 0.05);
+  --rubigo-shadow:
+    0 4px 16px -2px rgba(17, 24, 39, 0.06),
+    0 2px 6px -1px rgba(17, 24, 39, 0.04);
+  --rubigo-shadow-lg:
+    0 12px 28px -4px rgba(17, 24, 39, 0.1),
+    0 6px 12px -2px rgba(17, 24, 39, 0.05);
 }
 
 * {
@@ -41,7 +45,11 @@ body {
   min-width: 320px;
   background: var(--rubigo-background);
   color: var(--rubigo-text);
-  font: 16px/1.5 "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, sans-serif;
+  font:
+    16px/1.5 "Plus Jakarta Sans",
+    -apple-system,
+    BlinkMacSystemFont,
+    sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -109,7 +117,10 @@ textarea:focus-visible {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  transition: background 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
+  transition:
+    background 0.15s ease,
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
 }
 
 .btn-primary:hover,
@@ -132,7 +143,9 @@ textarea:focus-visible {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  transition: background 0.15s ease, transform 0.15s ease;
+  transition:
+    background 0.15s ease,
+    transform 0.15s ease;
 }
 
 .btn-accent:hover {
@@ -331,7 +344,9 @@ button:disabled {
   text-align: left;
   font-size: 14px;
   font-weight: 500;
-  transition: background 0.15s ease, color 0.15s ease;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
 }
 
 .nav-item:hover {
@@ -619,7 +634,9 @@ button:disabled {
   background: var(--rubigo-surface);
   box-shadow: var(--rubigo-shadow-sm);
   cursor: pointer;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
 }
 
 .search-bar:hover,
@@ -697,7 +714,8 @@ button:disabled {
 .hero-slide-scrim {
   position: absolute;
   inset: 0;
-  background: linear-gradient(
+  background:
+    linear-gradient(
       0deg,
       rgba(10, 40, 26, 0.95) 0%,
       rgba(10, 40, 26, 0.65) 34%,
@@ -747,7 +765,7 @@ button:disabled {
 
 .hero-slide-copy h2 {
   margin: 0 0 8px;
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: "Space Grotesk", sans-serif;
   font-size: 24px;
   font-weight: 700;
   line-height: 1.2;
@@ -772,7 +790,9 @@ button:disabled {
   color: var(--rubigo-primary-dark);
   font-size: 13px;
   font-weight: 700;
-  transition: transform 0.15s ease, background 0.15s ease;
+  transition:
+    transform 0.15s ease,
+    background 0.15s ease;
 }
 
 .hero-slide-cta:hover {
@@ -796,7 +816,9 @@ button:disabled {
   height: 6px;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.45);
-  transition: width 0.25s ease, background 0.25s ease;
+  transition:
+    width 0.25s ease,
+    background 0.25s ease;
 }
 
 .hero-dot.active {
@@ -888,7 +910,9 @@ button:disabled {
   font-size: 12px;
   font-weight: 600;
   white-space: nowrap;
-  transition: border-color 0.15s ease, background 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease;
 }
 
 .category-chip:hover {
@@ -1064,7 +1088,9 @@ button:disabled {
   background: var(--rubigo-surface);
   border: 1px solid var(--rubigo-border);
   box-shadow: var(--rubigo-shadow-sm);
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
 }
 
 .merchant-card:hover,
@@ -1348,7 +1374,9 @@ button:disabled {
   background: var(--rubigo-primary);
   cursor: pointer;
   position: relative;
-  transition: transform 0.15s ease, background 0.15s ease;
+  transition:
+    transform 0.15s ease,
+    background 0.15s ease;
 }
 
 .add-button:hover {
@@ -1559,7 +1587,9 @@ button:disabled {
   border-radius: 50%;
   color: var(--rubigo-primary);
   background: var(--rubigo-primary-light);
-  transition: transform 0.15s ease, background 0.15s ease;
+  transition:
+    transform 0.15s ease,
+    background 0.15s ease;
 }
 
 .profile-edit-trigger:hover {
@@ -1672,7 +1702,10 @@ button:disabled {
   background: var(--rubigo-surface);
   text-align: left;
   box-shadow: var(--rubigo-shadow-sm);
-  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+  transition:
+    transform 0.15s ease,
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
 }
 
 .profile-action-card:hover {
@@ -1858,8 +1891,11 @@ footer {
     gap: 4px;
     padding: 8px 10px;
     border-radius: 999px;
-    background: #ffffff;
-    box-shadow: 0 12px 32px -8px rgba(15, 81, 50, 0.22), 0 2px 8px rgba(17, 24, 39, 0.06);
+    background: var(--rubigo-surface);
+    border: 1px solid var(--rubigo-border);
+    box-shadow:
+      0 12px 32px -8px rgba(15, 81, 50, 0.22),
+      0 2px 8px rgba(17, 24, 39, 0.06);
   }
 
   .mobile-nav button {
@@ -1875,7 +1911,10 @@ footer {
     color: var(--rubigo-text-muted);
     font-size: 10px;
     font-weight: 600;
-    transition: color 0.2s ease, background 0.2s ease, transform 0.2s ease;
+    transition:
+      color 0.2s ease,
+      background 0.2s ease,
+      transform 0.2s ease;
   }
 
   .mobile-nav button:active {
@@ -1925,3 +1964,238 @@ footer {
   }
 }
 
+/* =========================================================
+   RUBIGO THEMES
+   ========================================================= */
+
+:root[data-rubigo-theme="rubigo"] {
+  --rubigo-primary: #16a34a;
+  --rubigo-primary-light: #dcfce7;
+  --rubigo-primary-soft: #dcfce7;
+  --rubigo-primary-dark: #0f5132;
+  --rubigo-lime: #d6e86a;
+  --rubigo-accent: #f97316;
+  --rubigo-background: #f7faf7;
+  --rubigo-surface: #ffffff;
+  --rubigo-text: #111827;
+  --rubigo-text-muted: #6b7280;
+  --rubigo-border: #e5e7eb;
+}
+
+:root[data-rubigo-theme="dark"] {
+  --rubigo-primary: #22c55e;
+  --rubigo-primary-light: #17351f;
+  --rubigo-primary-soft: #17351f;
+  --rubigo-primary-dark: #86efac;
+  --rubigo-lime: #d6e86a;
+  --rubigo-accent: #fb923c;
+  --rubigo-background: #0b1110;
+  --rubigo-surface: #121a18;
+  --rubigo-text: #f3f4f6;
+  --rubigo-text-muted: #9ca3af;
+  --rubigo-border: #26332f;
+}
+
+:root[data-rubigo-theme="ocean"] {
+  --rubigo-primary: #0f766e;
+  --rubigo-primary-light: #ccfbf1;
+  --rubigo-primary-soft: #ccfbf1;
+  --rubigo-primary-dark: #115e59;
+  --rubigo-lime: #a7f3d0;
+  --rubigo-accent: #0ea5e9;
+  --rubigo-background: #f0fdfa;
+  --rubigo-surface: #ffffff;
+  --rubigo-text: #0f172a;
+  --rubigo-text-muted: #64748b;
+  --rubigo-border: #cbd5e1;
+}
+
+:root[data-rubigo-theme="sand"] {
+  --rubigo-primary: #8a5a20;
+  --rubigo-primary-light: #f5ead7;
+  --rubigo-primary-soft: #f5ead7;
+  --rubigo-primary-dark: #6b4216;
+  --rubigo-lime: #e8d690;
+  --rubigo-accent: #c96b2c;
+  --rubigo-background: #faf7f0;
+  --rubigo-surface: #fffdf8;
+  --rubigo-text: #2b241b;
+  --rubigo-text-muted: #796f62;
+  --rubigo-border: #e5ddd0;
+}
+
+html[data-rubigo-theme="dark"],
+html[data-rubigo-theme="dark"] body {
+  background: var(--rubigo-background);
+  color: var(--rubigo-text);
+}
+
+html[data-rubigo-theme="dark"] .topbar {
+  background: rgba(18, 26, 24, 0.92);
+}
+
+/* =========================================================
+   NAVIGATION MOBILE — THEMES RUBIGO
+   ========================================================= */
+
+html[data-rubigo-theme="rubigo"] .mobile-nav,
+html[data-rubigo-theme="ocean"] .mobile-nav,
+html[data-rubigo-theme="sand"] .mobile-nav {
+  background: var(--rubigo-surface);
+  border-color: var(--rubigo-border);
+}
+
+html[data-rubigo-theme="dark"] .mobile-nav {
+  background: var(--rubigo-surface);
+  border-color: var(--rubigo-border);
+  box-shadow:
+    0 14px 34px -10px rgba(0, 0, 0, 0.55),
+    0 2px 10px rgba(0, 0, 0, 0.24);
+}
+
+html[data-rubigo-theme="dark"] .mobile-nav button {
+  color: var(--rubigo-text-muted);
+}
+
+html[data-rubigo-theme="dark"] .mobile-nav button.active {
+  color: #173f32;
+  background: var(--rubigo-lime);
+}
+
+html[data-rubigo-theme="ocean"] .mobile-nav button.active {
+  color: #064e3b;
+  background: var(--rubigo-lime);
+}
+
+html[data-rubigo-theme="sand"] .mobile-nav button.active {
+  color: var(--rubigo-primary-dark);
+  background: var(--rubigo-lime);
+}
+
+/* FORCE THE MOBILE NAV TO FOLLOW THE ACTIVE RUBIGO THEME */
+html[data-rubigo-theme="rubigo"] .mobile-nav,
+html[data-rubigo-theme="dark"] .mobile-nav,
+html[data-rubigo-theme="ocean"] .mobile-nav,
+html[data-rubigo-theme="sand"] .mobile-nav {
+  background: var(--rubigo-surface) !important;
+  border-color: var(--rubigo-border) !important;
+  color: var(--rubigo-text) !important;
+}
+
+html[data-rubigo-theme="dark"] .mobile-nav {
+  box-shadow:
+    0 14px 34px -10px rgba(0, 0, 0, 0.62),
+    0 2px 10px rgba(0, 0, 0, 0.28) !important;
+}
+
+html[data-rubigo-theme="dark"] .mobile-nav button {
+  color: var(--rubigo-text-muted) !important;
+}
+
+html[data-rubigo-theme="dark"] .mobile-nav button.active {
+  color: #173f32 !important;
+  background: var(--rubigo-lime) !important;
+}
+
+html[data-rubigo-theme="ocean"] .mobile-nav button.active,
+html[data-rubigo-theme="sand"] .mobile-nav button.active,
+html[data-rubigo-theme="rubigo"] .mobile-nav button.active {
+  background: var(--rubigo-lime) !important;
+}
+
+/* =========================================================
+   HOME CLIENT — CORRECTION CONTRASTE / ACCESSIBILITÉ
+   Priorité : thème sombre RUBIGO
+   ========================================================= */
+
+html[data-rubigo-theme="dark"] .welcome-row h1,
+html[data-rubigo-theme="dark"] .section-heading h2,
+html[data-rubigo-theme="dark"] .section-heading h3,
+html[data-rubigo-theme="dark"] .service-label,
+html[data-rubigo-theme="dark"] .merchant-info h3,
+html[data-rubigo-theme="dark"] .product-copy h3,
+html[data-rubigo-theme="dark"] .order-card h3 {
+  color: #f5f7f6 !important;
+}
+
+html[data-rubigo-theme="dark"] .welcome-copy,
+html[data-rubigo-theme="dark"] .service-description,
+html[data-rubigo-theme="dark"] .merchant-sub,
+html[data-rubigo-theme="dark"] .merchant-meta,
+html[data-rubigo-theme="dark"] .product-copy p,
+html[data-rubigo-theme="dark"] .order-card p,
+html[data-rubigo-theme="dark"] .order-card small {
+  color: #c6d0cb !important;
+}
+
+/* Recherche : texte et placeholder suffisamment visibles sur fond sombre. */
+html[data-rubigo-theme="dark"] .search-bar,
+html[data-rubigo-theme="dark"] .search-input,
+html[data-rubigo-theme="dark"] .search-input input {
+  color: #f3f7f5 !important;
+}
+
+html[data-rubigo-theme="dark"] .search-input input::placeholder,
+html[data-rubigo-theme="dark"] .search-bar::placeholder {
+  color: #b7c3bd !important;
+  opacity: 1 !important;
+}
+
+/* Liens d'action : vert lisible, jamais gris sur gris. */
+html[data-rubigo-theme="dark"] .text-button {
+  color: #86efac !important;
+  font-weight: 700 !important;
+}
+
+/* Bouton principal du hero : texte sombre sur lime pour un contraste net. */
+html[data-rubigo-theme="dark"] .hero-slide-cta,
+html[data-rubigo-theme="dark"] .quick-order {
+  color: #17351f !important;
+  background: #d6e86a !important;
+  border-color: #d6e86a !important;
+  font-weight: 800 !important;
+}
+
+html[data-rubigo-theme="dark"] .hero-slide-cta:hover,
+html[data-rubigo-theme="dark"] .hero-slide-cta:focus-visible,
+html[data-rubigo-theme="dark"] .quick-order:hover,
+html[data-rubigo-theme="dark"] .quick-order:focus-visible {
+  color: #102a1b !important;
+  background: #e2f27f !important;
+}
+
+/* Cartes de catégories : texte toujours clair sur surface sombre. */
+html[data-rubigo-theme="dark"] .category-chip {
+  color: #f3f7f5 !important;
+}
+
+html[data-rubigo-theme="dark"] .category-chip:hover,
+html[data-rubigo-theme="dark"] .category-chip:focus-visible {
+  color: #eaffef !important;
+}
+
+/* Bandeau de confiance : labels et sous-labels renforcés. */
+html[data-rubigo-theme="dark"] .trust-text strong {
+  color: #f3f7f5 !important;
+}
+
+html[data-rubigo-theme="dark"] .trust-text small {
+  color: #c0ccc6 !important;
+}
+
+/* Navigation mobile : labels inactifs suffisamment visibles. */
+html[data-rubigo-theme="dark"] .mobile-nav button {
+  color: #c4cfca !important;
+}
+
+html[data-rubigo-theme="dark"] .mobile-nav button.active,
+html[data-rubigo-theme="dark"] .mobile-nav button[aria-current="page"] {
+  color: #17351f !important;
+  background: #d6e86a !important;
+}
+
+/* Petits textes et compteurs visibles sur les sections sombres. */
+html[data-rubigo-theme="dark"] .section-heading .eyebrow,
+html[data-rubigo-theme="dark"] .eyebrow {
+  color: #86efac !important;
+}

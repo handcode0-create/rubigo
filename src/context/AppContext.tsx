@@ -78,10 +78,19 @@ type AppContextValue = {
   clearCart: () => void;
   placeOrder: (address?: Address) => Promise<Order | null>;
   updateOrderStatus: (orderId: string, status: OrderStatus) => boolean;
-  updateMerchantOrderStatus: (orderId: string, status: OrderStatus) => Promise<boolean>;
-  confirmDelivery: (orderId: string, pin: string) => Promise<{ ok: boolean; message?: string }>;
+  updateMerchantOrderStatus: (
+    orderId: string,
+    status: OrderStatus,
+  ) => Promise<boolean>;
+  confirmDelivery: (
+    orderId: string,
+    pin: string,
+  ) => Promise<{ ok: boolean; message?: string }>;
   acceptMission: (orderId: string) => Promise<boolean>;
-  advanceDriverOrderStatus: (orderId: string, status: OrderStatus) => Promise<boolean>;
+  advanceDriverOrderStatus: (
+    orderId: string,
+    status: OrderStatus,
+  ) => Promise<boolean>;
   cancelOrder: (orderId: string) => Promise<boolean>;
   switchRole: (role: Role) => void;
   switchToCustomer: () => void;
@@ -151,7 +160,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let isMounted = true;
 
-    const applySession = async (session: Awaited<ReturnType<typeof authService.getSession>>) => {
+    const applySession = async (
+      session: Awaited<ReturnType<typeof authService.getSession>>,
+    ) => {
       if (!session?.user) {
         if (!isMounted) return;
         setUser(emptyUser);
@@ -176,7 +187,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
         `addresses:${profile.id}`,
         [],
       );
-      setUser(authService.mapProfileToUser(profile, session.user.email, cachedAddresses));
+      setUser(
+        authService.mapProfileToUser(
+          profile,
+          session.user.email,
+          cachedAddresses,
+        ),
+      );
       setAuthenticated(true);
       setAuthLoading(false);
     };
@@ -206,20 +223,27 @@ export function AppProvider({ children }: { children: ReactNode }) {
     let isMounted = true;
     const customerId = user.id;
     const merchantNameById = (merchantId: string) =>
-      merchants.find((entry) => entry.id === merchantId)?.name ?? "Commerce RUBIGO";
+      merchants.find((entry) => entry.id === merchantId)?.name ??
+      "Commerce RUBIGO";
 
     const load = async () => {
       setOrdersLoading(true);
-      const result = await orderService.fetchOrdersForCustomer(customerId, merchantNameById);
+      const result = await orderService.fetchOrdersForCustomer(
+        customerId,
+        merchantNameById,
+      );
       if (!isMounted) return;
       setOrders(result);
       setOrdersLoading(false);
     };
 
     load();
-    const unsubscribe = orderService.subscribeToCustomerOrders(customerId, () => {
-      void load();
-    });
+    const unsubscribe = orderService.subscribeToCustomerOrders(
+      customerId,
+      () => {
+        void load();
+      },
+    );
 
     return () => {
       isMounted = false;
@@ -232,7 +256,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
   // assigné manuellement par un admin — cf. migration 0007). Tant que ce
   // lien n'existe pas, on n'affiche rien plutôt que d'inventer des données.
   useEffect(() => {
-    if (!authenticated || !user.id || user.role !== "merchant" || !user.merchantLocalId) {
+    if (
+      !authenticated ||
+      !user.id ||
+      user.role !== "merchant" ||
+      !user.merchantLocalId
+    ) {
       setMerchantOrders([]);
       setMerchantOrdersLoading(false);
       return;
@@ -241,19 +270,26 @@ export function AppProvider({ children }: { children: ReactNode }) {
     let isMounted = true;
     const merchantLocalId = user.merchantLocalId;
     const merchantName =
-      merchants.find((entry) => entry.id === merchantLocalId)?.name ?? "Votre commerce";
+      merchants.find((entry) => entry.id === merchantLocalId)?.name ??
+      "Votre commerce";
 
     const load = async () => {
       setMerchantOrdersLoading(true);
-      const result = await orderService.fetchOrdersForMerchant(merchantLocalId, merchantName);
+      const result = await orderService.fetchOrdersForMerchant(
+        merchantLocalId,
+        merchantName,
+      );
       if (isMounted) setMerchantOrders(result);
       setMerchantOrdersLoading(false);
     };
 
     load();
-    const unsubscribe = orderService.subscribeToMerchantOrders(merchantLocalId, () => {
-      void load();
-    });
+    const unsubscribe = orderService.subscribeToMerchantOrders(
+      merchantLocalId,
+      () => {
+        void load();
+      },
+    );
 
     return () => {
       isMounted = false;
@@ -275,32 +311,44 @@ export function AppProvider({ children }: { children: ReactNode }) {
     let isMounted = true;
     const driverId = user.id;
     const merchantNameById = (merchantId: string) =>
-      merchants.find((entry) => entry.id === merchantId)?.name ?? "Commerce RUBIGO";
+      merchants.find((entry) => entry.id === merchantId)?.name ??
+      "Commerce RUBIGO";
 
-    const loadDriverOrders = async () => {
-      setDriverOrdersLoading(true);
-      const result = await orderService.fetchOrdersForDriver(driverId, merchantNameById);
+    const loadDriverOrders = async (showLoading = false) => {
+      if (showLoading) setDriverOrdersLoading(true);
+      const result = await orderService.fetchOrdersForDriver(
+        driverId,
+        merchantNameById,
+      );
       if (isMounted) setDriverOrders(result);
-      setDriverOrdersLoading(false);
+      if (showLoading) setDriverOrdersLoading(false);
     };
 
-    const loadMissions = async () => {
-      setMissionsLoading(true);
-      const result = await orderService.fetchAvailableMissions(merchantNameById);
+    const loadMissions = async (showLoading = false) => {
+      if (showLoading) setMissionsLoading(true);
+      const result =
+        await orderService.fetchAvailableMissions(merchantNameById);
       if (isMounted) setAvailableMissions(result);
-      setMissionsLoading(false);
+      if (showLoading) setMissionsLoading(false);
     };
 
-    loadDriverOrders();
-    loadMissions();
+    void loadDriverOrders(true);
+    void loadMissions(true);
 
-    const unsubscribeDriver = orderService.subscribeToDriverOrders(driverId, () => {
-      void loadDriverOrders();
-      void loadMissions();
-    });
-    const unsubscribeMissions = orderService.subscribeToAvailableMissions(() => {
-      void loadMissions();
-    });
+    const unsubscribeDriver = orderService.subscribeToDriverOrders(
+      driverId,
+      () => {
+        // Realtime ne doit pas masquer l'interface pendant le refetch.
+        // Les mutations utilisateur mettent déjà l'état local à jour immédiatement.
+        void loadDriverOrders(false);
+        void loadMissions(false);
+      },
+    );
+    const unsubscribeMissions = orderService.subscribeToAvailableMissions(
+      () => {
+        void loadMissions(false);
+      },
+    );
 
     return () => {
       isMounted = false;
@@ -308,7 +356,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
       unsubscribeMissions();
     };
   }, [authenticated, user.id, user.role]);
-
 
   // (étape ultérieure), on les garde en local par utilisateur pour ne pas les
   // perdre entre deux sessions. Ceci ne sert jamais à déterminer l'authentification.
@@ -486,23 +533,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
     status: OrderStatus,
   ): Promise<boolean> => {
     const order = merchantOrders.find((item) => item.id === orderId);
-    if (!order || !orderService.canTransition(order.status, status)) return false;
+    if (!order || !orderService.canTransition(order.status, status))
+      return false;
 
-    const success = await orderService.updateOrderStatusAsMerchant(orderId, status);
+    const success = await orderService.updateOrderStatusAsMerchant(
+      orderId,
+      status,
+    );
     if (!success) {
       notify("Impossible de mettre à jour cette commande pour le moment.");
       return false;
     }
-
-    // Mise à jour immédiate de l'interface Merchant après confirmation Supabase.
-    // Realtime reste actif en parallèle : cette mutation locale évite le délai
-    // visuel entre le clic et l'arrivée de l'événement Realtime.
-    setMerchantOrders((current) =>
-      current.map((item) =>
-        item.id === orderId ? { ...item, status } : item,
-      ),
-    );
-
     notify(`Commande mise à jour : ${status.replace("_", " ")}.`, orderId);
     return true;
   };
@@ -519,7 +560,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (!result.ok) {
       const messages: Record<string, string> = {
         not_authorized: "Cette commande ne vous est pas assignée.",
-        invalid_status: "Cette commande n'est pas encore prête à être confirmée.",
+        invalid_status:
+          "Cette commande n'est pas encore prête à être confirmée.",
         already_confirmed: "Cette commande a déjà été confirmée.",
         no_pin: "Aucun code n'est associé à cette commande.",
         too_many_attempts: "Trop de tentatives. Contactez le support RUBIGO.",
@@ -530,9 +572,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
       };
       return {
         ok: false,
-        message: messages[result.error ?? ""] ?? "Impossible de confirmer la livraison.",
+        message:
+          messages[result.error ?? ""] ??
+          "Impossible de confirmer la livraison.",
       };
     }
+    // Mise à jour locale immédiate après confirmation serveur.
+    setDriverOrders((current) =>
+      current.map((item) =>
+        item.id === orderId ? { ...item, status: "delivered" } : item,
+      ),
+    );
     notify("Livraison confirmée.", orderId);
     return { ok: true };
   };
@@ -546,6 +596,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
       notify("Impossible d'accepter cette course (déjà prise ?).");
       return false;
     }
+
+    // Mise à jour locale immédiate : l'interface ne dépend plus du délai Realtime.
+    const acceptedOrder = availableMissions.find((item) => item.id === orderId);
+    if (acceptedOrder) {
+      setAvailableMissions((current) =>
+        current.filter((item) => item.id !== orderId),
+      );
+      setDriverOrders((current) => [
+        { ...acceptedOrder, status: "driver_assigned" },
+        ...current.filter((item) => item.id !== orderId),
+      ]);
+    }
+
     notify("Course acceptée.", orderId);
     return true;
   };
@@ -555,12 +618,31 @@ export function AppProvider({ children }: { children: ReactNode }) {
     status: OrderStatus,
   ): Promise<boolean> => {
     const order = driverOrders.find((item) => item.id === orderId);
-    if (!order || !orderService.canTransition(order.status, status)) return false;
+    if (!order || !orderService.canTransition(order.status, status))
+      return false;
+
+    // Optimistic UI : le bouton et le statut changent immédiatement après le clic.
+    // Si Supabase refuse la transition, on restaure l'état précédent.
+    setDriverOrders((current) =>
+      current.map((item) => (item.id === orderId ? { ...item, status } : item)),
+    );
+
     const success = await orderService.advanceOrderStatus(orderId, status);
     if (!success) {
+      setDriverOrders((current) =>
+        current.map((item) =>
+          item.id === orderId ? { ...item, status: order.status } : item,
+        ),
+      );
       notify("Impossible de mettre à jour cette course pour le moment.");
       return false;
     }
+
+    const labels: Partial<Record<OrderStatus, string>> = {
+      picked_up: "Commande récupérée.",
+      delivering: "Livraison démarrée.",
+    };
+    notify(labels[status] ?? "Course mise à jour.", orderId);
     return true;
   };
 
@@ -581,7 +663,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     setOrders((current) =>
       current.map((item) =>
-        item.id === orderId ? { ...item, status: "cancelled" as OrderStatus } : item,
+        item.id === orderId
+          ? { ...item, status: "cancelled" as OrderStatus }
+          : item,
       ),
     );
     notify("Votre commande a été annulée.", orderId);
@@ -684,7 +768,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
       })),
     }));
 
-  const login = async (email: string, password: string): Promise<AuthActionResult> => {
+  const login = async (
+    email: string,
+    password: string,
+  ): Promise<AuthActionResult> => {
     const result = await authService.signIn(email, password);
     if (!result.ok) return { ok: false, message: result.message };
 
@@ -704,7 +791,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (!profile) {
       return {
         ok: false,
-        message: "Connexion réussie mais impossible de charger votre profil. Réessayez dans un instant.",
+        message:
+          "Connexion réussie mais impossible de charger votre profil. Réessayez dans un instant.",
       };
     }
     return { ok: true };
@@ -716,7 +804,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     email: string,
     password: string,
   ): Promise<AuthActionResult> => {
-    const result = await authService.signUp(email, password, { fullName, phone });
+    const result = await authService.signUp(email, password, {
+      fullName,
+      phone,
+    });
     if (!result.ok) return { ok: false, message: result.message };
     return { ok: true, needsEmailConfirmation: result.needsEmailConfirmation };
   };
@@ -727,20 +818,28 @@ export function AppProvider({ children }: { children: ReactNode }) {
     // "déconnecté" dès que Supabase confirme la fin de session.
   };
 
-  const updateProfile = async (name: string, phone: string): Promise<AuthActionResult> => {
+  const updateProfile = async (
+    name: string,
+    phone: string,
+  ): Promise<AuthActionResult> => {
     if (!user.id) return { ok: false, message: "Vous devez être connecté." };
     const updated = await authService.updateProfile(user.id, { name, phone });
     if (!updated) {
-      return { ok: false, message: "Impossible de mettre à jour votre profil pour le moment." };
+      return {
+        ok: false,
+        message: "Impossible de mettre à jour votre profil pour le moment.",
+      };
     }
-    setUser((current) => authService.mapProfileToUser(updated, current.email, current.addresses));
+    setUser((current) =>
+      authService.mapProfileToUser(updated, current.email, current.addresses),
+    );
     return { ok: true };
   };
 
   const deleteNotification = (id: string) =>
-  setNotifications((current) =>
-    current.filter((notification) => notification.id !== id),
-  );
+    setNotifications((current) =>
+      current.filter((notification) => notification.id !== id),
+    );
 
   const activeRole = user.role ?? "customer";
 

@@ -1,41 +1,48 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState } from "react";
 import {
   ArrowRightCircle,
+  Check,
   Clock3,
   MapPin,
   Package,
   ShieldCheck,
   Wallet2,
-} from 'lucide-react'
-import { OrderCard } from '../components/Cards'
-import { useApp } from '../context/AppContext'
-import { useUserLocation } from '../hooks/useUserLocation'
-import { calculateDistanceMeters, calculateDriverEarnings } from '../utils/pricingUtils'
-import { formatCurrency } from '../utils/formatCurrency'
-import { merchants } from '../data'
-import type { Order } from '../types'
-import './RolePages.css'
+} from "lucide-react";
+import { OrderCard } from "../components/Cards";
+import { useApp } from "../context/AppContext";
+import { useUserLocation } from "../hooks/useUserLocation";
+import {
+  calculateDistanceMeters,
+  calculateDriverEarnings,
+} from "../utils/pricingUtils";
+import { formatCurrency } from "../utils/formatCurrency";
+import { merchants } from "../data";
+import type { Order } from "../types";
+import "./RolePages.css";
 
 function useDriverGuard(user: { role?: string }) {
-  return user.role === 'driver'
+  return user.role === "driver";
 }
 
 function isSameDay(isoA?: string, isoB: Date = new Date()): boolean {
-  if (!isoA) return false
-  const a = new Date(isoA)
-  if (Number.isNaN(a.getTime())) return false
+  if (!isoA) return false;
+  const a = new Date(isoA);
+  if (Number.isNaN(a.getTime())) return false;
   return (
     a.getFullYear() === isoB.getFullYear() &&
     a.getMonth() === isoB.getMonth() &&
     a.getDate() === isoB.getDate()
-  )
+  );
 }
 
 function formatStepTime(iso?: string): string | null {
-  if (!iso) return null
-  const date = new Date(iso)
-  if (Number.isNaN(date.getTime())) return null
-  return date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+  if (!iso) return null;
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return null;
+  return date.toLocaleTimeString("fr-FR", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }
 
 // Un livreur a "traité" une course aujourd'hui si elle a été récupérée ou
@@ -43,78 +50,132 @@ function formatStepTime(iso?: string): string | null {
 // cours aujourd'hui). Aucune donnée inventée : uniquement des horodatages
 // réels déjà présents sur la commande.
 function isTodayActivity(order: Order, today: Date): boolean {
-  if (['driver_assigned', 'picked_up', 'delivering'].includes(order.status)) return true
-  if (order.status === 'delivered' && isSameDay(order.tracking?.deliveredAt, today)) return true
-  return isSameDay(order.tracking?.pickedUpAt, today)
+  if (["driver_assigned", "picked_up", "delivering"].includes(order.status))
+    return true;
+  if (
+    order.status === "delivered" &&
+    isSameDay(order.tracking?.deliveredAt, today)
+  )
+    return true;
+  return isSameDay(order.tracking?.pickedUpAt, today);
 }
 
-function formatDelta(todayValue: number, yesterdayValue: number, unit: 'count' | 'amount'): string | null {
+function formatDelta(
+  todayValue: number,
+  yesterdayValue: number,
+  unit: "count" | "amount",
+): string | null {
   if (yesterdayValue <= 0) {
     // Pas de référence hier : afficher une évolution serait inventé.
-    return todayValue > 0 ? 'Nouveau aujourd’hui' : null
+    return todayValue > 0 ? "Nouveau aujourd’hui" : null;
   }
-  const diff = todayValue - yesterdayValue
-  if (diff === 0) return 'Stable vs hier'
-  const sign = diff > 0 ? '+' : ''
-  if (unit === 'count') return `${sign}${diff} vs hier`
-  const percent = Math.round((diff / yesterdayValue) * 100)
-  return `${percent > 0 ? '+' : ''}${percent}% vs hier`
+  const diff = todayValue - yesterdayValue;
+  if (diff === 0) return "Stable vs hier";
+  const sign = diff > 0 ? "+" : "";
+  if (unit === "count") return `${sign}${diff} vs hier`;
+  const percent = Math.round((diff / yesterdayValue) * 100);
+  return `${percent > 0 ? "+" : ""}${percent}% vs hier`;
 }
 
-export function DriverHome({ onReturnToCustomer }: { onReturnToCustomer: () => void }) {
-  const { user, driverOrders, driverOrdersLoading, availableMissions, advanceDriverOrderStatus, confirmDelivery } =
-    useApp()
+export function DriverHome({
+  onReturnToCustomer,
+}: {
+  onReturnToCustomer: () => void;
+}) {
+  const {
+    user,
+    driverOrders,
+    driverOrdersLoading,
+    availableMissions,
+    advanceDriverOrderStatus,
+    confirmDelivery,
+  } = useApp();
 
-  const [pin, setPin] = useState('')
-  const [pinError, setPinError] = useState('')
-  const [confirming, setConfirming] = useState(false)
-  const { status: locationStatus } = useUserLocation()
+  const [pin, setPin] = useState("");
+  const [pinError, setPinError] = useState("");
+  const [confirming, setConfirming] = useState(false);
+  const [advancingStatus, setAdvancingStatus] = useState<
+    "picked_up" | "delivering" | null
+  >(null);
+  const { status: locationStatus } = useUserLocation();
 
-  const assigned = driverOrders.find((order) => order.status === 'driver_assigned')
-  const active = driverOrders.find((order) => ['picked_up', 'delivering'].includes(order.status))
-  const highlighted = active ?? assigned
+  const assigned = driverOrders.find(
+    (order) => order.status === "driver_assigned",
+  );
+  const active = driverOrders.find((order) =>
+    ["picked_up", "delivering"].includes(order.status),
+  );
+  const highlighted = active ?? assigned;
 
   const stats = useMemo(() => {
-    const now = new Date()
-    const yesterday = new Date(now)
-    yesterday.setDate(now.getDate() - 1)
+    const now = new Date();
+    const yesterday = new Date(now);
+    yesterday.setDate(now.getDate() - 1);
 
-    const todayOrders = driverOrders.filter((order) => isTodayActivity(order, now))
+    const todayOrders = driverOrders.filter((order) =>
+      isTodayActivity(order, now),
+    );
     const yesterdayOrders = driverOrders.filter(
       (order) =>
-        (order.status === 'delivered' && isSameDay(order.tracking?.deliveredAt, yesterday)) ||
+        (order.status === "delivered" &&
+          isSameDay(order.tracking?.deliveredAt, yesterday)) ||
         isSameDay(order.tracking?.pickedUpAt, yesterday),
-    )
+    );
 
     const todayRevenue = todayOrders
-      .filter((order) => order.status === 'delivered')
-      .reduce((sum, order) => sum + calculateDriverEarnings(order.deliveryFee ?? 0), 0)
+      .filter((order) => order.status === "delivered")
+      .reduce(
+        (sum, order) => sum + calculateDriverEarnings(order.deliveryFee ?? 0),
+        0,
+      );
     const yesterdayRevenue = yesterdayOrders
-      .filter((order) => order.status === 'delivered')
-      .reduce((sum, order) => sum + calculateDriverEarnings(order.deliveryFee ?? 0), 0)
+      .filter((order) => order.status === "delivered")
+      .reduce(
+        (sum, order) => sum + calculateDriverEarnings(order.deliveryFee ?? 0),
+        0,
+      );
 
     return {
       coursesToday: todayOrders.length,
-      coursesDelta: formatDelta(todayOrders.length, yesterdayOrders.length, 'count'),
+      coursesDelta: formatDelta(
+        todayOrders.length,
+        yesterdayOrders.length,
+        "count",
+      ),
       revenueToday: todayRevenue,
-      revenueDelta: formatDelta(todayRevenue, yesterdayRevenue, 'amount'),
-    }
-  }, [driverOrders])
+      revenueDelta: formatDelta(todayRevenue, yesterdayRevenue, "amount"),
+    };
+  }, [driverOrders]);
 
-  const merchant = highlighted ? merchants.find((entry) => entry.id === highlighted.merchantId) : undefined
+  const merchant = highlighted
+    ? merchants.find((entry) => entry.id === highlighted.merchantId)
+    : undefined;
+
+  const handleAdvance = async (
+    orderId: string,
+    nextStatus: "picked_up" | "delivering",
+  ) => {
+    if (advancingStatus) return;
+    setAdvancingStatus(nextStatus);
+    try {
+      await advanceDriverOrderStatus(orderId, nextStatus);
+    } finally {
+      setAdvancingStatus(null);
+    }
+  };
 
   const handleConfirm = async () => {
-    if (!active) return
-    setConfirming(true)
-    setPinError('')
-    const result = await confirmDelivery(active.id, pin)
-    setConfirming(false)
+    if (!active) return;
+    setConfirming(true);
+    setPinError("");
+    const result = await confirmDelivery(active.id, pin);
+    setConfirming(false);
     if (!result.ok) {
-      setPinError(result.message ?? 'Le code PIN est invalide.')
-      return
+      setPinError(result.message ?? "Le code PIN est invalide.");
+      return;
     }
-    setPin('')
-  }
+    setPin("");
+  };
 
   if (!useDriverGuard(user)) {
     return (
@@ -128,14 +189,14 @@ export function DriverHome({ onReturnToCustomer }: { onReturnToCustomer: () => v
           <button onClick={onReturnToCustomer}>Revenir au client</button>
         </div>
       </div>
-    )
+    );
   }
 
   return (
     <div className="page-content role-page driver-home">
       <section className="page-heading">
         <p className="eyebrow">ESPACE LIVREUR</p>
-        <h1>Bonjour {user.name.split(' ')[0]} 👋</h1>
+        <h1>Bonjour {user.name.split(" ")[0]} 👋</h1>
         <p>Vos courses réelles, au même endroit.</p>
       </section>
 
@@ -157,7 +218,9 @@ export function DriverHome({ onReturnToCustomer }: { onReturnToCustomer: () => v
           </span>
           <strong>{stats.coursesToday}</strong>
           <small>Courses du jour</small>
-          {stats.coursesDelta ? <span className="driver-stat-delta">{stats.coursesDelta}</span> : null}
+          {stats.coursesDelta ? (
+            <span className="driver-stat-delta">{stats.coursesDelta}</span>
+          ) : null}
         </div>
         <div className="driver-stat-card">
           <span className="driver-stat-icon">
@@ -165,7 +228,9 @@ export function DriverHome({ onReturnToCustomer }: { onReturnToCustomer: () => v
           </span>
           <strong>{formatCurrency(stats.revenueToday)}</strong>
           <small>Revenus du jour</small>
-          {stats.revenueDelta ? <span className="driver-stat-delta">{stats.revenueDelta}</span> : null}
+          {stats.revenueDelta ? (
+            <span className="driver-stat-delta">{stats.revenueDelta}</span>
+          ) : null}
         </div>
         <div className="driver-stat-card">
           <span className="driver-stat-icon">
@@ -173,194 +238,304 @@ export function DriverHome({ onReturnToCustomer }: { onReturnToCustomer: () => v
           </span>
           <strong>{availableMissions.length}</strong>
           <small>Missions dispo.</small>
-          {locationStatus === 'success' ? <span className="driver-stat-delta">À proximité</span> : null}
+          {locationStatus === "success" ? (
+            <span className="driver-stat-delta">À proximité</span>
+          ) : null}
         </div>
       </div>
 
-      {driverOrdersLoading ? (
-        <div className="empty-state">
-          <span>⌖</span>
-          <strong>Chargement…</strong>
-        </div>
-      ) : highlighted ? (
-        <section className="driver-active-section">
-          <div className="section-heading">
-            <h2>Course active</h2>
+      <section className="driver-active-section driver-course-board">
+        <div className="section-heading">
+          <div>
+            <p className="eyebrow">COURSE</p>
+            <h2>Course actuelle</h2>
           </div>
+          <span className="driver-stepper-status">
+            <span className="dot" />
+            {driverOrdersLoading
+              ? "Synchronisation…"
+              : highlighted
+                ? highlighted.status === "delivering"
+                  ? "Livraison en cours"
+                  : highlighted.status === "picked_up"
+                    ? "Commande récupérée"
+                    : "Course assignée"
+                : "Disponible"}
+          </span>
+        </div>
 
-          <article className="driver-order-card">
-            <div className="driver-order-top">
-              <div className="driver-order-merchant-image">
-                {merchant?.image ? <img src={merchant.image} alt="" /> : <Package size={20} />}
-              </div>
-              <div className="driver-order-merchant-info">
-                <strong>{highlighted.merchantName}</strong>
-                <span>
-                  <MapPin size={12} />
-                  {highlighted.deliveryAddress ?? 'Adresse non renseignée'}
-                </span>
-              </div>
-              {highlighted.orderNumber ? (
-                <span className="driver-order-ref">#{highlighted.orderNumber}</span>
-              ) : null}
-            </div>
-
-            <span className={`driver-order-status ${highlighted.status}`}>
-              {highlighted.status === 'driver_assigned'
-                ? 'Course assignée'
-                : highlighted.status === 'picked_up'
-                  ? 'Commande récupérée'
-                  : 'En livraison'}
+        {driverOrdersLoading ? (
+          <div className="driver-course-empty">
+            <span className="driver-course-empty-icon">
+              <Clock3 size={18} />
             </span>
-
-            {highlighted.status === 'driver_assigned' ? (
-              <button
-                className="primary-button"
-                onClick={() => advanceDriverOrderStatus(highlighted.id, 'picked_up')}
-              >
-                Commande récupérée
-              </button>
-            ) : highlighted.status === 'picked_up' ? (
-              <button
-                className="primary-button"
-                onClick={() => advanceDriverOrderStatus(highlighted.id, 'delivering')}
-              >
-                Commencer la livraison
-              </button>
-            ) : (
-              <div className="driver-pin-card">
-                <div className="driver-pin-head">
-                  <ShieldCheck size={18} />
-                  <div>
-                    <strong>Code PIN client</strong>
-                    <p>Demandez le code PIN au client pour confirmer la remise.</p>
-                  </div>
+            <div>
+              <strong>Mise à jour de votre course…</strong>
+              <p>Les informations en temps réel arrivent.</p>
+            </div>
+          </div>
+        ) : highlighted ? (
+          <>
+            <article className="driver-order-card">
+              <div className="driver-order-top">
+                <div className="driver-order-merchant-image">
+                  {merchant?.image ? (
+                    <img src={merchant.image} alt="" />
+                  ) : (
+                    <Package size={20} />
+                  )}
                 </div>
-                <input
-                  value={pin}
-                  onChange={(event) => {
-                    setPin(event.target.value.replace(/\D/g, '').slice(0, 4))
-                    setPinError('')
-                  }}
-                  placeholder="Entrez le code PIN (4 chiffres)"
-                  inputMode="numeric"
-                  maxLength={4}
-                />
-                {pinError ? (
-                  <p className="checkout-error" role="alert">
-                    {pinError}
-                  </p>
+                <div className="driver-order-merchant-info">
+                  <strong>{highlighted.merchantName}</strong>
+                  <span>
+                    <MapPin size={12} />
+                    {highlighted.deliveryAddress ?? "Adresse non renseignée"}
+                  </span>
+                </div>
+                {highlighted.orderNumber ? (
+                  <span className="driver-order-ref">
+                    #{highlighted.orderNumber}
+                  </span>
                 ) : null}
+              </div>
+
+              <span className={`driver-order-status ${highlighted.status}`}>
+                {highlighted.status === "driver_assigned"
+                  ? "Course assignée"
+                  : highlighted.status === "picked_up"
+                    ? "Commande récupérée"
+                    : "En livraison"}
+              </span>
+
+              {highlighted.status === "driver_assigned" ? (
                 <button
                   className="primary-button"
-                  onClick={handleConfirm}
-                  disabled={confirming || pin.length !== 4}
+                  onClick={() =>
+                    void handleAdvance(highlighted.id, "picked_up")
+                  }
+                  disabled={advancingStatus !== null}
                 >
-                  {confirming ? 'Vérification…' : 'Confirmer la livraison'}
+                  {advancingStatus === "picked_up"
+                    ? "Mise à jour…"
+                    : "Commande récupérée"}
                 </button>
-              </div>
-            )}
-          </article>
-
-          <div className="driver-stepper">
-            <div className="section-heading">
-              <h3>Prochaine étape</h3>
-              <span className="driver-stepper-status">
-                <span className="dot" />
-                {highlighted.status === 'delivering' ? 'Livraison en cours' : 'En préparation de la course'}
-              </span>
-            </div>
-            <div className="driver-stepper-track">
-              {(
-                [
-                  { key: 'picked_up', label: 'Commande récupérée', time: highlighted.tracking?.pickedUpAt },
-                  { key: 'delivering', label: 'En route', time: highlighted.tracking?.outForDeliveryAt },
-                  { key: 'delivered', label: 'Livrée', time: highlighted.tracking?.deliveredAt },
-                ] as const
-              ).map((step, index, list) => {
-                const order = ['driver_assigned', 'picked_up', 'delivering', 'delivered']
-                const currentIndex = order.indexOf(highlighted.status)
-                const stepIndex = order.indexOf(step.key)
-                const done = currentIndex > stepIndex
-                const current = currentIndex === stepIndex
-                const time = formatStepTime(step.time)
-                return (
-                  <div key={step.key} className={`driver-step ${done ? 'done' : ''} ${current ? 'current' : ''}`}>
-                    <span className="driver-step-node" />
-                    <strong>{step.label}</strong>
-                    <small>{time ?? (done ? 'Confirmée' : current ? 'En cours' : '—')}</small>
-                    {index < list.length - 1 ? <span className={`driver-step-line ${done ? 'done' : ''}`} /> : null}
+              ) : highlighted.status === "picked_up" ? (
+                <button
+                  className="primary-button"
+                  onClick={() =>
+                    void handleAdvance(highlighted.id, "delivering")
+                  }
+                  disabled={advancingStatus !== null}
+                >
+                  {advancingStatus === "delivering"
+                    ? "Mise à jour…"
+                    : "Commencer la livraison"}
+                </button>
+              ) : (
+                <div className="driver-pin-card">
+                  <div className="driver-pin-head">
+                    <ShieldCheck size={18} />
+                    <div>
+                      <strong>Code PIN client</strong>
+                      <p>
+                        Demandez le code PIN au client pour confirmer la remise.
+                      </p>
+                    </div>
                   </div>
-                )
-              })}
+                  <input
+                    value={pin}
+                    onChange={(event) => {
+                      setPin(event.target.value.replace(/\D/g, "").slice(0, 4));
+                      setPinError("");
+                    }}
+                    placeholder="Entrez le code PIN (4 chiffres)"
+                    inputMode="numeric"
+                    maxLength={4}
+                  />
+                  {pinError ? (
+                    <p className="checkout-error" role="alert">
+                      {pinError}
+                    </p>
+                  ) : null}
+                  <button
+                    className="primary-button"
+                    onClick={handleConfirm}
+                    disabled={confirming || pin.length !== 4}
+                  >
+                    {confirming ? "Vérification…" : "Confirmer la livraison"}
+                  </button>
+                </div>
+              )}
+            </article>
+
+            <div className="driver-stepper">
+              <div className="section-heading">
+                <h3>Prochaine étape</h3>
+                <span className="driver-stepper-status">
+                  <span className="dot" />
+                  {highlighted.status === "delivering"
+                    ? "Livraison en cours"
+                    : "En préparation de la course"}
+                </span>
+              </div>
+              <div className="driver-stepper-track">
+                {(
+                  [
+                    {
+                      key: "picked_up",
+                      label: "Commande récupérée",
+                      time: highlighted.tracking?.pickedUpAt,
+                    },
+                    {
+                      key: "delivering",
+                      label: "En route",
+                      time: highlighted.tracking?.outForDeliveryAt,
+                    },
+                    {
+                      key: "delivered",
+                      label: "Livrée",
+                      time: highlighted.tracking?.deliveredAt,
+                    },
+                  ] as const
+                ).map((step, index, list) => {
+                  const order = [
+                    "driver_assigned",
+                    "picked_up",
+                    "delivering",
+                    "delivered",
+                  ];
+                  const currentIndex = order.indexOf(highlighted.status);
+                  const stepIndex = order.indexOf(step.key);
+                  const done = currentIndex > stepIndex;
+                  const current = currentIndex === stepIndex;
+                  const time = formatStepTime(step.time);
+                  return (
+                    <div
+                      key={step.key}
+                      className={`driver-step ${done ? "done" : ""} ${current ? "current" : ""}`}
+                    >
+                      <span className="driver-step-node">
+                        {done ? <Check size={11} strokeWidth={3} /> : null}
+                      </span>
+                      <strong>{step.label}</strong>
+                      <small>
+                        {time ??
+                          (done ? "Confirmée" : current ? "En cours" : "—")}
+                      </small>
+                      {index < list.length - 1 ? (
+                        <span
+                          className={`driver-step-line ${done ? "done" : ""}`}
+                        />
+                      ) : null}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </>
+        ) : (
+          <div className="driver-course-empty">
+            <span className="driver-course-empty-icon">
+              <Package size={18} />
+            </span>
+            <div>
+              <strong>Aucune course en cours</strong>
+              <p>
+                Consultez l'onglet Missions pour accepter une nouvelle course.
+              </p>
             </div>
           </div>
-        </section>
-      ) : (
-        <div className="empty-state">
-          <span>⌖</span>
-          <strong>Aucune course en cours</strong>
-          <p>Consultez l'onglet Missions pour en accepter une.</p>
-        </div>
-      )}
+        )}
+      </section>
     </div>
-  )
+  );
 }
 
-type MissionSort = 'distance' | 'earnings' | 'recent'
+type MissionSort = "distance" | "earnings" | "recent";
 
-export function DriverMissions({ onReturnToCustomer }: { onReturnToCustomer: () => void }) {
-  const { user, driverOrders, availableMissions, missionsLoading, acceptMission } = useApp()
-  const [acceptingId, setAcceptingId] = useState<string | null>(null)
-  const [sortBy, setSortBy] = useState<MissionSort>('distance')
-  const [merchantFilter, setMerchantFilter] = useState<string>('all')
-  const { location: driverLocation, status: locationStatus, locate } = useUserLocation()
+export function DriverMissions({
+  onReturnToCustomer,
+}: {
+  onReturnToCustomer: () => void;
+}) {
+  const {
+    user,
+    driverOrders,
+    availableMissions,
+    missionsLoading,
+    acceptMission,
+  } = useApp();
+  const [acceptingId, setAcceptingId] = useState<string | null>(null);
+  const [sortBy, setSortBy] = useState<MissionSort>("distance");
+  const [merchantFilter, setMerchantFilter] = useState<string>("all");
+  const {
+    location: driverLocation,
+    status: locationStatus,
+    locate,
+  } = useUserLocation();
 
   const busy = driverOrders.some((order) =>
-    ['driver_assigned', 'picked_up', 'delivering'].includes(order.status),
-  )
+    ["driver_assigned", "picked_up", "delivering"].includes(order.status),
+  );
 
   const handleAccept = async (orderId: string) => {
-    setAcceptingId(orderId)
-    await acceptMission(orderId)
-    setAcceptingId(null)
-  }
+    setAcceptingId(orderId);
+    await acceptMission(orderId);
+    setAcceptingId(null);
+  };
 
   // Distance réelle uniquement si la position du livreur a pu être obtenue
   // (Geolocation API du navigateur) — sinon on n'invente aucune distance.
   const missionsWithDistance = useMemo(
     () =>
       availableMissions.map((order) => {
-        const merchant = merchants.find((entry) => entry.id === order.merchantId)
+        const merchant = merchants.find(
+          (entry) => entry.id === order.merchantId,
+        );
         const distanceMeters = driverLocation
           ? calculateDistanceMeters(driverLocation, merchant?.location)
-          : undefined
-        return { order, merchant, distanceMeters }
+          : undefined;
+        return { order, merchant, distanceMeters };
       }),
     [availableMissions, driverLocation],
-  )
+  );
 
   const merchantOptions = useMemo(
-    () =>
-      [...new Map(missionsWithDistance.map((item) => [item.order.merchantId, item.order.merchantName])).entries()],
+    () => [
+      ...new Map(
+        missionsWithDistance.map((item) => [
+          item.order.merchantId,
+          item.order.merchantName,
+        ]),
+      ).entries(),
+    ],
     [missionsWithDistance],
-  )
+  );
 
   const visibleMissions = missionsWithDistance
-    .filter((item) => merchantFilter === 'all' || item.order.merchantId === merchantFilter)
+    .filter(
+      (item) =>
+        merchantFilter === "all" || item.order.merchantId === merchantFilter,
+    )
     .sort((a, b) => {
-      if (sortBy === 'earnings') {
-        return calculateDriverEarnings(b.order.deliveryFee ?? 0) - calculateDriverEarnings(a.order.deliveryFee ?? 0)
+      if (sortBy === "earnings") {
+        return (
+          calculateDriverEarnings(b.order.deliveryFee ?? 0) -
+          calculateDriverEarnings(a.order.deliveryFee ?? 0)
+        );
       }
-      if (sortBy === 'recent') {
-        return new Date(b.order.createdAt ?? 0).getTime() - new Date(a.order.createdAt ?? 0).getTime()
+      if (sortBy === "recent") {
+        return (
+          new Date(b.order.createdAt ?? 0).getTime() -
+          new Date(a.order.createdAt ?? 0).getTime()
+        );
       }
       // distance : les missions sans distance connue passent en dernier,
       // jamais mélangées au hasard avec de vraies valeurs
-      if (a.distanceMeters === undefined) return 1
-      if (b.distanceMeters === undefined) return -1
-      return a.distanceMeters - b.distanceMeters
-    })
+      if (a.distanceMeters === undefined) return 1;
+      if (b.distanceMeters === undefined) return -1;
+      return a.distanceMeters - b.distanceMeters;
+    });
 
   if (!useDriverGuard(user)) {
     return (
@@ -369,7 +544,7 @@ export function DriverMissions({ onReturnToCustomer }: { onReturnToCustomer: () 
           <button onClick={onReturnToCustomer}>Revenir au client</button>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -380,14 +555,14 @@ export function DriverMissions({ onReturnToCustomer }: { onReturnToCustomer: () 
         <p>Commandes prêtes, pas encore prises par un livreur.</p>
       </section>
 
-      {locationStatus !== 'success' ? (
+      {locationStatus !== "success" ? (
         <div className="mission-location-note">
-          {locationStatus === 'loading' ? (
+          {locationStatus === "loading" ? (
             <span>Localisation en cours…</span>
           ) : (
             <>
               <span>
-                {locationStatus === 'denied'
+                {locationStatus === "denied"
                   ? "Position non partagée : le tri par distance n'est pas disponible."
                   : "Position indisponible : le tri par distance n'est pas disponible."}
               </span>
@@ -400,13 +575,19 @@ export function DriverMissions({ onReturnToCustomer }: { onReturnToCustomer: () 
       ) : null}
 
       <div className="mission-filters">
-        <select value={sortBy} onChange={(event) => setSortBy(event.target.value as MissionSort)}>
+        <select
+          value={sortBy}
+          onChange={(event) => setSortBy(event.target.value as MissionSort)}
+        >
           <option value="distance">Trier : plus proche</option>
           <option value="earnings">Trier : meilleure rémunération</option>
           <option value="recent">Trier : plus récent</option>
         </select>
 
-        <select value={merchantFilter} onChange={(event) => setMerchantFilter(event.target.value)}>
+        <select
+          value={merchantFilter}
+          onChange={(event) => setMerchantFilter(event.target.value)}
+        >
           <option value="all">Tous les commerces</option>
           {merchantOptions.map(([id, name]) => (
             <option key={id} value={id}>
@@ -434,15 +615,26 @@ export function DriverMissions({ onReturnToCustomer }: { onReturnToCustomer: () 
               <OrderCard order={order} onOpen={() => undefined} />
               <div className="mission-meta">
                 {distanceMeters !== undefined ? (
-                  <span>{(distanceMeters / 1000).toFixed(1).replace('.', ',')} km</span>
+                  <span>
+                    {(distanceMeters / 1000).toFixed(1).replace(".", ",")} km
+                  </span>
                 ) : (
                   <span className="muted">Distance indisponible</span>
                 )}
-                <span>{formatCurrency(calculateDriverEarnings(order.deliveryFee ?? 0))}</span>
+                <span>
+                  {formatCurrency(
+                    calculateDriverEarnings(order.deliveryFee ?? 0),
+                  )}
+                </span>
               </div>
               <div className="workflow-actions">
-                <button onClick={() => handleAccept(order.id)} disabled={acceptingId === order.id}>
-                  {acceptingId === order.id ? 'Acceptation…' : 'Accepter cette course'}
+                <button
+                  onClick={() => handleAccept(order.id)}
+                  disabled={acceptingId === order.id}
+                >
+                  {acceptingId === order.id
+                    ? "Acceptation…"
+                    : "Accepter cette course"}
                 </button>
               </div>
             </div>
@@ -456,12 +648,18 @@ export function DriverMissions({ onReturnToCustomer }: { onReturnToCustomer: () 
         </div>
       )}
     </div>
-  )
+  );
 }
 
-export function DriverHistory({ onReturnToCustomer }: { onReturnToCustomer: () => void }) {
-  const { user, driverOrders, driverOrdersLoading } = useApp()
-  const past = driverOrders.filter((order) => ['delivered', 'cancelled'].includes(order.status))
+export function DriverHistory({
+  onReturnToCustomer,
+}: {
+  onReturnToCustomer: () => void;
+}) {
+  const { user, driverOrders, driverOrdersLoading } = useApp();
+  const past = driverOrders.filter((order) =>
+    ["delivered", "cancelled"].includes(order.status),
+  );
 
   if (!useDriverGuard(user)) {
     return (
@@ -470,7 +668,7 @@ export function DriverHistory({ onReturnToCustomer }: { onReturnToCustomer: () =
           <button onClick={onReturnToCustomer}>Revenir au client</button>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -501,6 +699,5 @@ export function DriverHistory({ onReturnToCustomer }: { onReturnToCustomer: () =
         </div>
       )}
     </div>
-  )
+  );
 }
-
