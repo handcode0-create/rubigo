@@ -1,4 +1,4 @@
-import { categories, merchants, products, services } from '../data'
+import { categories, merchants, services } from '../data'
 import { useApp } from '../context/AppContext'
 import { MerchantCard, OrderCard, ProductCard, ServiceCard } from '../components/Cards'
 import { ArrowRightIcon, CartIcon, MotoIcon, SearchIcon, ShieldCheckIcon, SparklesIcon, StoreIcon } from '../components/Icons'
@@ -17,7 +17,7 @@ export function Home({
   onMerchant: (merchant: Merchant) => void
   onProduct: (product: Product) => void
 }) {
-  const { user, orders, cart, cartTotal, setIsCartOpen } = useApp()
+  const { user, orders, cart, cartTotal, setIsCartOpen, products } = useApp()
   const activeOrder = orders.find((order) => !['delivered', 'cancelled'].includes(order.status))
 
   const heroSlides: HeroSlide[] = merchants

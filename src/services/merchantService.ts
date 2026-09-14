@@ -164,4 +164,30 @@ export const merchantService = {
 
     return !error && !!data
   },
+
+  // ------------------------------------------------------------------
+  // CATALOGUE CLIENT — tous les produits Supabase, lisibles publiquement
+  // (RLS "products readable" : using(true))
+  // ------------------------------------------------------------------
+  async fetchAllProducts(): Promise<Product[]> {
+    const { data, error } = await supabase
+      .from('products')
+      .select(PRODUCT_COLUMNS)
+      .order('created_at', { ascending: false })
+
+    if (error || !data) return []
+    return (data as ProductRow[]).map(mapProduct)
+  },
+
+  subscribeToProducts(onChange: () => void): () => void {
+    const channel = supabase
+      .channel('rubigo-products-global')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'products' },
+        onChange,
+      )
+      .subscribe()
+    return () => { void supabase.removeChannel(channel) }
+  },
 }

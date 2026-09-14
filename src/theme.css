@@ -1089,74 +1089,93 @@ html[data-rubigo-theme="dark"] .hero-slide {
   background: #06120d !important;
 }
 
-/* Assombrit davantage la zone contenant badge + titre + description + CTA */
+/* Scrim renforcé : noircit dès le milieu pour garantir la lisibilité
+   du contenu sur toutes les images, quelle que soit leur luminosité */
 html[data-rubigo-theme="dark"] .hero-slide-scrim {
   background:
     linear-gradient(
       to bottom,
-      rgba(5, 18, 12, 0.05) 0%,
-      rgba(5, 18, 12, 0.08) 28%,
-      rgba(5, 18, 12, 0.28) 48%,
-      rgba(5, 18, 12, 0.78) 70%,
-      rgba(5, 18, 12, 0.96) 100%
+      rgba(4, 14, 9, 0.0)  0%,
+      rgba(4, 14, 9, 0.0)  20%,
+      rgba(4, 14, 9, 0.45) 45%,
+      rgba(4, 14, 9, 0.82) 65%,
+      rgba(4, 14, 9, 0.97) 100%
+    ),
+    linear-gradient(
+      100deg,
+      rgba(4, 14, 9, 0.6) 0%,
+      rgba(4, 14, 9, 0.0) 50%
     ) !important;
 }
 
-/* Badge "À DÉCOUVRIR" : contraste beaucoup plus net */
-html[data-rubigo-theme="dark"] .hero-slide-badge {
-  background: #d6e86a !important;
-  color: #12351f !important;
-  border: 1px solid rgba(18, 53, 31, 0.18);
-  font-weight: 900 !important;
-  text-shadow: none !important;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.22);
+/* Zone texte : panneau sombre local en renfort du scrim global */
+html[data-rubigo-theme="dark"] .hero-slide-copy {
+  background: linear-gradient(
+    to top,
+    rgba(4, 14, 9, 0.72) 0%,
+    rgba(4, 14, 9, 0.0)  100%
+  ) !important;
 }
 
-/* Titre */
+/* Badge "À DÉCOUVRIR" : lime sur fond sombre, très lisible */
+html[data-rubigo-theme="dark"] .hero-slide-badge {
+  background: #d6e86a !important;
+  color: #0d2b19 !important;
+  border: none !important;
+  font-weight: 900 !important;
+  text-shadow: none !important;
+  letter-spacing: 0.8px !important;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.35) !important;
+}
+
+/* Titre : blanc pur + ombre portée forte */
 html[data-rubigo-theme="dark"] .hero-slide-copy h2 {
   color: #ffffff !important;
   text-shadow:
-    0 2px 8px rgba(0, 0, 0, 0.55),
-    0 1px 2px rgba(0, 0, 0, 0.8);
+    0 2px 10px rgba(0, 0, 0, 0.75),
+    0 1px 3px rgba(0, 0, 0, 0.9) !important;
 }
 
-/* Description */
+/* Description : quasi-blanc + ombre légère */
 html[data-rubigo-theme="dark"] .hero-slide-copy p {
-  color: #f1f5f3 !important;
-  text-shadow:
-    0 2px 7px rgba(0, 0, 0, 0.65);
+  color: #eef4f1 !important;
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.75) !important;
 }
 
-/* CTA */
+/* CTA : lime + texte vert profond */
 html[data-rubigo-theme="dark"] .hero-slide-cta {
   background: #d6e86a !important;
-  color: #12351f !important;
-  border: 1px solid #d6e86a !important;
-  font-weight: 900 !important;
+  color: #0d2b19 !important;
+  border: none !important;
+  font-weight: 800 !important;
   box-shadow:
-    0 6px 18px rgba(0, 0, 0, 0.28),
-    0 2px 5px rgba(0, 0, 0, 0.16);
+    0 6px 20px rgba(0, 0, 0, 0.38),
+    0 2px 6px rgba(0, 0, 0, 0.22) !important;
 }
 
-/* Hover / focus */
+/* CTA hover / focus */
 html[data-rubigo-theme="dark"] .hero-slide-cta:hover,
 html[data-rubigo-theme="dark"] .hero-slide-cta:focus-visible {
-  background: #e4f58a !important;
-  color: #0d2b19 !important;
+  background: #e6f590 !important;
+  color: #072015 !important;
 }
 
 /* Petit chip en haut à droite */
 html[data-rubigo-theme="dark"] .hero-slide-chip {
-  background: rgba(255, 255, 255, 0.96) !important;
-  color: #12351f !important;
-  border: 1px solid rgba(18, 53, 31, 0.12);
+  background: rgba(255, 255, 255, 0.97) !important;
+  color: #0d2b19 !important;
+  border: none !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.32) !important;
 }
 
-/* Dots */
+/* Dots inactifs : bien visibles sur fond sombre */
 html[data-rubigo-theme="dark"] .hero-dot {
-  background: rgba(255, 255, 255, 0.5) !important;
+  background: rgba(255, 255, 255, 0.55) !important;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4) !important;
 }
 
+/* Dot actif : lime, cohérent avec le CTA */
 html[data-rubigo-theme="dark"] .hero-dot.active {
   background: #d6e86a !important;
+  box-shadow: 0 1px 6px rgba(214, 232, 106, 0.5) !important;
 }

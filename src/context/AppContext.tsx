@@ -8,12 +8,13 @@ import {
 import {
   categories as initialCategories,
   merchants,
-  products,
+  products as localProducts,
   user as initialUser,
 } from "../data";
 import { storage } from "../services/storageService";
 import { authService } from "../services/authService";
 import { orderService } from "../services/orderService";
+import { merchantService } from "../services/merchantService";
 import {
   calculateDeliveryFee,
   calculateDistanceMeters,
@@ -28,6 +29,7 @@ import type {
   Order,
   OrderItem,
   OrderStatus,
+  Product,
   Role,
   User,
 } from "../types";
@@ -49,6 +51,7 @@ type AppContextValue = {
   activeRole: Role;
   authenticated: boolean;
   authLoading: boolean;
+  products: Product[];
   orders: Order[];
   ordersLoading: boolean;
   merchantOrders: Order[];
@@ -153,6 +156,34 @@ export function AppProvider({ children }: { children: ReactNode }) {
   );
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [cartConflict, setCartConflict] = useState<CartConflict | null>(null);
+
+  // Produits : source de vérité Supabase, fallback données statiques.
+  // La RLS "products readable: using(true)" autorise la lecture publique.
+  const [catalogProducts, setCatalogProducts] = useState<Product[]>(localProducts);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const load = async () => {
+      const remote = await merchantService.fetchAllProducts();
+      if (!isMounted || remote.length === 0) return;
+      // Supabase en priorité ; conserver les produits statiques non présents dans Supabase
+      const remoteIds = new Set(remote.map((p) => p.id));
+      const fallback = localProducts.filter((p) => !remoteIds.has(p.id));
+      setCatalogProducts([...remote, ...fallback]);
+    };
+
+    void load();
+
+    const unsubscribe = merchantService.subscribeToProducts(() => {
+      void load();
+    });
+
+    return () => {
+      isMounted = false;
+      unsubscribe();
+    };
+  }, []);
 
   // Supabase Auth est la seule source de vérité pour l'identité et la session.
   // On écoute la session au montage puis à chaque changement (login, logout,
@@ -411,7 +442,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const cartMerchant = merchants.find(
     (merchant) =>
       merchant.id ===
-      products.find((product) => product.id === cart[0]?.productId)?.merchantId,
+      catalogProducts.find((product) => product.id === cart[0]?.productId)?.merchantId,
   );
 
   const cartTotal = calculateSubtotal(cart);
@@ -429,7 +460,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const cartDeliveryFee = estimateDeliveryFee();
 
   const addToCart = (item: OrderItem) => {
-    const itemMerchantId = products.find(
+    const itemMerchantId = catalogProducts.find(
       (product) => product.id === item.productId,
     )?.merchantId;
 
@@ -711,7 +742,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const removeCategory = (categoryId: string) => {
     if (
       merchants.some((merchant) => merchant.categoryId === categoryId) ||
-      products.some((product) => product.categoryId === categoryId)
+      catalogProducts.some((product) => product.categoryId === categoryId)
     )
       return false;
     setCategories((current) =>
@@ -848,6 +879,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     activeRole,
     authenticated,
     authLoading,
+    products: catalogProducts,
     orders,
     ordersLoading,
     merchantOrders,
