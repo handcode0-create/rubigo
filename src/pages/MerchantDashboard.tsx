@@ -1,5 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
+  ArrowLeft,
+  ArrowUpRight,
+  BarChart3,
   Bell,
   BookOpen,
   Check,
@@ -7,6 +10,8 @@ import {
   Clock3,
   Home,
   Loader2,
+  LogOut,
+  MapPin,
   Package,
   Pencil,
   Plus,
@@ -14,14 +19,11 @@ import {
   Settings,
   ShoppingBag,
   Store,
+  Trash2,
   Truck,
   UserRound,
-  X,
-  ArrowLeft,
-  ArrowUpRight,
-  Trash2,
-  LogOut,
   WalletCards,
+  X,
 } from "lucide-react";
 import { merchants } from "../data";
 import { useApp } from "../context/AppContext";
@@ -49,6 +51,50 @@ const EMPTY_PRODUCT_FORM: ProductFormState = {
   price: "",
   category: "",
   available: true,
+};
+
+function isSameDay(isoA?: string, reference: Date = new Date()): boolean {
+  if (!isoA) return false;
+  const a = new Date(isoA);
+  if (Number.isNaN(a.getTime())) return false;
+  return (
+    a.getFullYear() === reference.getFullYear() &&
+    a.getMonth() === reference.getMonth() &&
+    a.getDate() === reference.getDate()
+  );
+}
+
+function isSameMonth(isoA?: string, reference: Date = new Date()): boolean {
+  if (!isoA) return false;
+  const a = new Date(isoA);
+  if (Number.isNaN(a.getTime())) return false;
+  return a.getFullYear() === reference.getFullYear() && a.getMonth() === reference.getMonth();
+}
+
+const STATUS_BADGE_LABEL: Record<OrderStatus, string> = {
+  pending: "En attente",
+  accepted: "Acceptée",
+  preparing: "En préparation",
+  ready: "Prête",
+  driver_assigned: "Livreur assigné",
+  picked_up: "Récupérée",
+  delivering: "En cours",
+  delivered: "Livrée",
+  cancelled: "Annulée",
+  merchant_rejected: "Refusée",
+};
+
+const STATUS_BADGE_CLASS: Record<OrderStatus, string> = {
+  pending: "badge-amber",
+  accepted: "badge-amber",
+  preparing: "badge-amber",
+  ready: "badge-amber",
+  driver_assigned: "badge-orange",
+  picked_up: "badge-orange",
+  delivering: "badge-orange",
+  delivered: "badge-green",
+  cancelled: "badge-red",
+  merchant_rejected: "badge-red",
 };
 
 type AvailableDriver = {
@@ -363,6 +409,30 @@ export function MerchantDashboard({
   );
   const deliveredCount = delivered.length;
 
+  const now = new Date();
+  const deliveredToday = delivered.filter((o) =>
+    isSameDay(o.tracking?.deliveredAt ?? o.createdAt, now),
+  ).length;
+  const revenueThisMonth = delivered
+    .filter((o) => isSameMonth(o.tracking?.deliveredAt ?? o.createdAt, now))
+    .reduce((sum, o) => sum + (o.subtotal ?? o.total), 0);
+  const lastMonthRef = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  const revenueLastMonth = delivered
+    .filter((o) => isSameMonth(o.tracking?.deliveredAt ?? o.createdAt, lastMonthRef))
+    .reduce((sum, o) => sum + (o.subtotal ?? o.total), 0);
+  const revenueTrend =
+    revenueLastMonth > 0
+      ? `${revenueThisMonth >= revenueLastMonth ? "+" : ""}${Math.round(
+          ((revenueThisMonth - revenueLastMonth) / revenueLastMonth) * 100,
+        )}% ce mois`
+      : revenueThisMonth > 0
+        ? "Nouveau ce mois-ci"
+        : null;
+  const todayOrdersCount = merchantOrders.filter((o) => isSameDay(o.createdAt, now)).length;
+  const todayRevenue = merchantOrders
+    .filter((o) => isSameDay(o.createdAt, now))
+    .reduce((sum, o) => sum + o.total, 0);
+
   const recentOrders = useMemo(
     () =>
       [...merchantOrders]
@@ -562,18 +632,32 @@ export function MerchantDashboard({
         <div className="merchant-hello">
           <p>ESPACE COMMERÇANT</p>
           <h1>Bonjour {user.name || "Commerçant"} 👋</h1>
-          <span>{displayName} · Adzopé</span>
+          <span className="merchant-location">
+            <MapPin size={13} />
+            {displayName} · Adzopé
+          </span>
+          {merchant?.description ? <p className="merchant-tagline">"{merchant.description}"</p> : null}
         </div>
 
         <div className="merchant-balance">
           <div>
             <span>Chiffre d’affaires livré</span>
             <strong>{formatCurrency(revenue)}</strong>
+            {revenueTrend ? (
+              <small className="merchant-trend">
+                <ArrowUpRight size={11} />
+                {revenueTrend}
+              </small>
+            ) : null}
           </div>
           <div className="merchant-balance-stat">
             <span>Commandes livrées</span>
             <strong>{deliveredCount}</strong>
-            <small>activité réelle</small>
+            {deliveredToday > 0 ? (
+              <small className="merchant-trend">+{deliveredToday} aujourd’hui</small>
+            ) : (
+              <small>activité réelle</small>
+            )}
           </div>
         </div>
 
@@ -589,6 +673,7 @@ export function MerchantDashboard({
             </span>
             <strong>{pending.length}</strong>
             <small>À traiter</small>
+            <em>{pending.length ? `${pending.length} en attente` : "Aucune"}</em>
           </button>
           <button
             onClick={() => {
@@ -601,6 +686,7 @@ export function MerchantDashboard({
             </span>
             <strong>{active.length}</strong>
             <small>En cours</small>
+            <em>{active.length ? `${active.length} en livraison` : "Aucune"}</em>
           </button>
           <button onClick={() => setTab("catalog")}>
             <span className="quick-icon">
@@ -608,9 +694,32 @@ export function MerchantDashboard({
             </span>
             <strong>{catalog.length}</strong>
             <small>Produits</small>
+            <em>Gérer</em>
           </button>
         </div>
       </section>
+
+      <button
+        type="button"
+        className="merchant-today-banner"
+        onClick={() => {
+          setTab("orders");
+          setFilter("all");
+        }}
+      >
+        <span className="quick-icon">
+          <BarChart3 size={17} />
+        </span>
+        <span className="merchant-today-copy">
+          <strong>Votre activité aujourd’hui</strong>
+          <small>
+            {todayOrdersCount} commande{todayOrdersCount > 1 ? "s" : ""} · {formatCurrency(todayRevenue)}
+          </small>
+        </span>
+        <span className="merchant-today-cta">
+          Voir les détails <ChevronRight size={15} />
+        </span>
+      </button>
 
       <main className="merchant-content">
         {tab === "home" && (
@@ -645,21 +754,34 @@ export function MerchantDashboard({
                     className="activity-row"
                     onClick={() => openOrder(order)}
                   >
-                    <span className="activity-icon">
+                    <span className={`activity-icon ${STATUS_BADGE_CLASS[order.status]}`}>
                       {order.status === "delivered" ? (
                         <Check size={17} />
+                      ) : order.status === "cancelled" || order.status === "merchant_rejected" ? (
+                        <X size={17} />
                       ) : (
                         <Truck size={17} />
                       )}
                     </span>
                     <span className="activity-copy">
-                      <strong>{order.orderNumber ?? "Commande"}</strong>
+                      <span className="activity-top">
+                        <strong>{order.orderNumber ?? "Commande"}</strong>
+                        <em className={`status-pill ${STATUS_BADGE_CLASS[order.status]}`}>
+                          {STATUS_BADGE_LABEL[order.status]}
+                        </em>
+                      </span>
                       <small>
-                        {LABELS[order.status]} · {formatCurrency(order.total)}
+                        {formatCurrency(order.total)} · {order.items.length} article
+                        {order.items.length > 1 ? "s" : ""}
                       </small>
                     </span>
                     <span className="activity-right">
-                      <small>{order.items.length} art.</small>
+                      <small>
+                        {new Date(order.createdAt ?? order.date).toLocaleDateString("fr-FR", {
+                          day: "2-digit",
+                          month: "short",
+                        })}
+                      </small>
                       <ChevronRight size={16} />
                     </span>
                   </button>

@@ -131,6 +131,29 @@
   font-size: 11px;
 }
 
+.merchant-location {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.merchant-tagline {
+  margin: 8px 0 0;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 11px;
+  font-style: italic;
+}
+
+.merchant-trend {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  margin-top: 4px;
+  color: var(--m-lime);
+  font-size: 9px;
+  font-weight: 800;
+}
+
 .merchant-balance {
   align-items: flex-start;
   gap: 16px;
@@ -202,6 +225,58 @@
   margin-top: 2px;
   color: rgba(255, 255, 255, 0.66);
   font-size: 9px;
+}
+
+.merchant-quick-grid em {
+  margin-top: 4px;
+  color: var(--m-lime);
+  font-size: 8px;
+  font-style: normal;
+  font-weight: 700;
+}
+
+.merchant-today-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: min(760px, calc(100% - 32px));
+  margin: 14px auto 0;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: rgba(22, 163, 74, 0.1);
+  text-align: left;
+}
+
+.merchant-today-banner .quick-icon {
+  background: rgba(22, 163, 74, 0.16);
+  color: var(--m-green-2);
+}
+
+.merchant-today-copy {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.merchant-today-copy strong {
+  font-size: 12px;
+  color: var(--m-text);
+}
+
+.merchant-today-copy small {
+  color: var(--m-muted);
+  font-size: 10px;
+}
+
+.merchant-today-cta {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  color: var(--m-green-2);
+  font-size: 10px;
+  font-weight: 800;
 }
 
 .merchant-content {
@@ -427,6 +502,29 @@
   background: #e9f5ee;
   color: #08715e;
 }
+
+.activity-icon.badge-green { background: #e9f5ee; color: #08715e; }
+.activity-icon.badge-orange { background: #fff2e2; color: #b45309; }
+.activity-icon.badge-amber { background: #fef9e7; color: #a16207; }
+.activity-icon.badge-red { background: #fdecea; color: #c0392b; }
+
+.activity-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.status-pill {
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 8px;
+  font-weight: 800;
+  font-style: normal;
+}
+.status-pill.badge-green { color: #08715e; background: #e9f5ee; }
+.status-pill.badge-orange { color: #b45309; background: #fff2e2; }
+.status-pill.badge-amber { color: #a16207; background: #fef9e7; }
+.status-pill.badge-red { color: #c0392b; background: #fdecea; }
 
 .activity-copy {
   flex: 1;
