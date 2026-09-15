@@ -15,6 +15,7 @@ import { storage } from "../services/storageService";
 import { authService } from "../services/authService";
 import { orderService } from "../services/orderService";
 import { merchantService } from "../services/merchantService";
+import { adminService } from "../services/adminService";
 import {
   calculateDeliveryFee,
   calculateDistanceMeters,
@@ -159,7 +160,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   // Produits : source de vérité Supabase, fallback données statiques.
   // La RLS "products readable: using(true)" autorise la lecture publique.
-  const [catalogProducts, setCatalogProducts] = useState<Product[]>(localProducts);
+  const [catalogProducts, setCatalogProducts] =
+    useState<Product[]>(localProducts);
 
   useEffect(() => {
     let isMounted = true;
@@ -184,6 +186,67 @@ export function AppProvider({ children }: { children: ReactNode }) {
       unsubscribe();
     };
   }, []);
+
+  const processPendingProfessionalRequests = async (
+    sessionUser: NonNullable<
+      Awaited<ReturnType<typeof authService.getSession>>
+    >["user"],
+  ) => {
+    const rawRoles = sessionStorage.getItem("rubigo_requested_roles");
+    if (!rawRoles) return;
+
+    let parsedRoles: unknown;
+    try {
+      parsedRoles = JSON.parse(rawRoles);
+    } catch {
+      sessionStorage.removeItem("rubigo_requested_roles");
+      return;
+    }
+
+    if (!Array.isArray(parsedRoles)) {
+      sessionStorage.removeItem("rubigo_requested_roles");
+      return;
+    }
+
+    const professionalRoles = parsedRoles.filter(
+      (role): role is "merchant" | "driver" =>
+        role === "merchant" || role === "driver",
+    );
+
+    if (professionalRoles.length === 0) {
+      sessionStorage.removeItem("rubigo_requested_roles");
+      return;
+    }
+
+    let allSucceeded = true;
+
+    for (const role of professionalRoles) {
+      const requestType =
+        role === "merchant" ? "merchant_application" : "driver_application";
+
+      const requestId = await adminService.submitProfessionalRequest(
+        requestType,
+        role,
+        role === "merchant"
+          ? "Demande d'inscription commerçant"
+          : "Demande d'inscription livreur",
+        undefined,
+        {
+          source: "registration",
+          userId: sessionUser.id,
+          email: sessionUser.email ?? null,
+        },
+      );
+
+      if (!requestId) {
+        allSucceeded = false;
+      }
+    }
+
+    if (allSucceeded) {
+      sessionStorage.removeItem("rubigo_requested_roles");
+    }
+  };
 
   // Supabase Auth est la seule source de vérité pour l'identité et la session.
   // On écoute la session au montage puis à chaque changement (login, logout,
@@ -227,6 +290,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       );
       setAuthenticated(true);
       setAuthLoading(false);
+      void processPendingProfessionalRequests(session.user);
     };
 
     authService.getSession().then(applySession);
@@ -442,7 +506,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const cartMerchant = merchants.find(
     (merchant) =>
       merchant.id ===
-      catalogProducts.find((product) => product.id === cart[0]?.productId)?.merchantId,
+      catalogProducts.find((product) => product.id === cart[0]?.productId)
+        ?.merchantId,
   );
 
   const cartTotal = calculateSubtotal(cart);
