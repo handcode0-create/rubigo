@@ -7,6 +7,7 @@ import {
   Bike,
   CalendarDays,
   Check,
+  CheckCircle2,
   ChevronDown,
   ChevronRight,
   CircleDollarSign,
@@ -14,14 +15,18 @@ import {
   Clock3,
   FileCheck2,
   LayoutDashboard,
+  Link2,
+  MapPin,
   Menu,
   PackageCheck,
   Search,
+  Tag,
   Settings,
   ShieldAlert,
   ShoppingCart,
   Store,
   TrendingUp,
+  UserCheck,
   UserRound,
   Users,
   X,
@@ -34,7 +39,7 @@ import {
   adminService,
   type AdminOverview,
   type AdminRequestStatus,
-} from "../services/adminService.ts";
+} from "../services/adminService";
 import "./AdminDashboard.css";
 
 type AdminSection =
@@ -102,6 +107,13 @@ export function AdminDashboard({
   const [query, setQuery] = useState("");
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [actingRequestId, setActingRequestId] = useState<string | null>(null);
+  const [merchantFilter, setMerchantFilter] = useState<
+    "all" | "assigned" | "available"
+  >("all");
+  const [selectedMerchantId, setSelectedMerchantId] = useState<string | null>(
+    null,
+  );
+  const [merchantAssigning, setMerchantAssigning] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -229,6 +241,82 @@ export function AdminDashboard({
         .includes(normalized);
     });
   }, [profiles, query]);
+
+  const merchantDirectory = useMemo(() => {
+    const normalized = query.trim().toLowerCase();
+
+    return merchants
+      .map((merchant) => {
+        const owners = profiles.filter(
+          (profile) =>
+            profile.role === "merchant" &&
+            profile.merchantLocalId === merchant.id,
+        );
+
+        return {
+          merchant,
+          owners,
+          assigned: owners.length > 0,
+        };
+      })
+      .filter(({ merchant, owners }) => {
+        const matchesFilter =
+          merchantFilter === "all" ||
+          (merchantFilter === "assigned" && owners.length > 0) ||
+          (merchantFilter === "available" && owners.length === 0);
+
+        if (!matchesFilter) return false;
+        if (!normalized) return true;
+
+        return `${merchant.name} ${merchant.category} ${merchant.location?.address ?? ""} ${owners
+          .map(
+            (owner) =>
+              `${owner.fullName} ${owner.email ?? ""} ${owner.phone ?? ""}`,
+          )
+          .join(" ")}`
+          .toLowerCase()
+          .includes(normalized);
+      });
+  }, [merchantFilter, profiles, query]);
+
+  const merchantStats = useMemo(() => {
+    const total = merchants.length;
+    const assigned = merchants.filter((merchant) =>
+      profiles.some(
+        (profile) =>
+          profile.role === "merchant" &&
+          profile.merchantLocalId === merchant.id,
+      ),
+    ).length;
+
+    return {
+      total,
+      assigned,
+      available: total - assigned,
+      validatedMerchants: profiles.filter(
+        (profile) => profile.role === "merchant" && profile.isActive !== false,
+      ).length,
+    };
+  }, [profiles]);
+
+  const assignMerchant = async (profileId: string, merchantLocalId: string) => {
+    setMerchantAssigning(true);
+    setError("");
+
+    const ok = await adminService.assignMerchant(profileId, merchantLocalId);
+
+    setMerchantAssigning(false);
+
+    if (!ok) {
+      setError(
+        "Impossible d’associer ce commerce. Vérifiez qu’il n’est pas déjà attribué à un autre commerçant.",
+      );
+      return;
+    }
+
+    setSelectedMerchantId(null);
+    await load();
+  };
 
   const lastSevenDays = useMemo(() => {
     const now = new Date();
@@ -812,6 +900,290 @@ export function AdminDashboard({
     </section>
   );
 
+  const renderMerchants = () => {
+
+    const availableProfiles = profiles.filter(
+      (profile) =>
+        profile.role === "merchant" &&
+        profile.isActive !== false &&
+        !profile.merchantLocalId,
+    );
+
+    return (
+      <>
+        <div className="merchant-admin-stats">
+          <StatCard
+            icon={<Store />}
+            value={merchantStats.total}
+            label="Commerces"
+            tone="green"
+          />
+          <StatCard
+            icon={<Link2 />}
+            value={merchantStats.assigned}
+            label="Commerces associés"
+            tone="orange"
+          />
+          <StatCard
+            icon={<Store />}
+            value={merchantStats.available}
+            label="À attribuer"
+            tone="blue"
+          />
+          <StatCard
+            icon={<UserCheck />}
+            value={merchantStats.validatedMerchants}
+            label="Commerçants validés"
+            tone="purple"
+          />
+        </div>
+
+        <section className="admin-panel merchant-admin-panel">
+          <PanelHeader
+            icon={<Store />}
+            title="Gestion des commerces"
+            badge={merchantDirectory.length}
+          />
+
+          <div className="merchant-admin-toolbar">
+            <div className="merchant-filter-tabs">
+              {[
+                ["all", `Tous (${merchantStats.total})`],
+                ["assigned", `Associés (${merchantStats.assigned})`],
+                ["available", `À attribuer (${merchantStats.available})`],
+              ].map(([value, label]) => (
+                <button
+                  type="button"
+                  key={value}
+                  className={
+                    merchantFilter === value
+                      ? "merchant-filter-tab active"
+                      : "merchant-filter-tab"
+                  }
+                  onClick={() =>
+                    setMerchantFilter(value as "all" | "assigned" | "available")
+                  }
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            <div className="merchant-admin-search">
+              <Search size={16} />
+              <input
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder="Rechercher un commerce ou un commerçant..."
+              />
+              {query ? (
+                <button
+                  type="button"
+                  aria-label="Effacer la recherche"
+                  onClick={() => setQuery("")}
+                >
+                  <X size={15} />
+                </button>
+              ) : null}
+            </div>
+          </div>
+
+          <div className="merchant-admin-grid">
+            {merchantDirectory.map(({ merchant, owners, assigned }) => (
+              <article
+                key={merchant.id}
+                className={`merchant-admin-card ${
+                  assigned ? "assigned" : "available"
+                }`}
+              >
+                <div className="merchant-card-top">
+                  <div
+                    className={`merchant-card-icon ${assigned ? "green" : "slate"}`}
+                  >
+                    <Store size={20} />
+                  </div>
+
+                  <span
+                    className={`merchant-status ${assigned ? "assigned" : "available"}`}
+                  >
+                    {assigned ? (
+                      <>
+                        <CheckCircle2 size={13} />
+                        Associé
+                      </>
+                    ) : (
+                      "Disponible"
+                    )}
+                  </span>
+                </div>
+
+                <div className="merchant-card-body">
+                  <div className="merchant-card-kicker">
+                    <Tag size={12} />
+                    {merchant.category}
+                  </div>
+
+                  <h3>{merchant.name}</h3>
+
+                  <p className="merchant-card-description">
+                    {merchant.description ??
+                      "Commerce local disponible sur RUBIGO."}
+                  </p>
+
+                  <div className="merchant-card-meta">
+                    <span>
+                      <MapPin size={14} />
+                      {merchant.location?.address ?? "Adzopé"}
+                    </span>
+                    <span>
+                      <Store size={14} />
+                      {merchant.id}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="merchant-card-owner">
+                  <div className="merchant-owner-label">
+                    Propriétaire RUBIGO
+                  </div>
+
+                  {owners.length ? (
+                    <div className="merchant-owner-list">
+                      {owners.map((owner) => (
+                        <div key={owner.id} className="merchant-owner">
+                          <div className="merchant-owner-avatar">
+                            {initials(owner.fullName)}
+                          </div>
+                          <div>
+                            <strong>{owner.fullName}</strong>
+                            <span>
+                              {owner.email ?? owner.phone ?? "Compte RUBIGO"}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="merchant-unassigned">
+                      <UserRound size={16} />
+                      <span>Aucun commerçant associé</span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="merchant-card-actions">
+                  <button
+                    type="button"
+                    className="merchant-details-button"
+                    onClick={() =>
+                      setSelectedMerchantId(
+                        selectedMerchantId === merchant.id ? null : merchant.id,
+                      )
+                    }
+                  >
+                    {selectedMerchantId === merchant.id
+                      ? "Fermer"
+                      : "Voir détails"}
+                    <ChevronRight size={15} />
+                  </button>
+
+                  {!assigned ? (
+                    <button
+                      type="button"
+                      className="merchant-assign-button"
+                      onClick={() => setSelectedMerchantId(merchant.id)}
+                    >
+                      <Link2 size={15} />
+                      Associer
+                    </button>
+                  ) : null}
+                </div>
+
+                {selectedMerchantId === merchant.id ? (
+                  <div className="merchant-assignment-panel">
+                    <div className="merchant-assignment-heading">
+                      <div>
+                        <span className="eyebrow">ASSOCIATION</span>
+                        <h4>
+                          {assigned
+                            ? "Commerce déjà associé"
+                            : "Choisir un commerçant validé"}
+                        </h4>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedMerchantId(null)}
+                        aria-label="Fermer"
+                      >
+                        <X size={16} />
+                      </button>
+                    </div>
+
+                    {assigned ? (
+                      <div className="merchant-assignment-message success">
+                        <CheckCircle2 size={17} />
+                        <span>
+                          Ce commerce est déjà relié à son ou ses commerçants
+                          enregistrés.
+                        </span>
+                      </div>
+                    ) : availableProfiles.length ? (
+                      <div className="merchant-assignee-list">
+                        {availableProfiles.map((profile) => (
+                          <button
+                            type="button"
+                            key={profile.id}
+                            className="merchant-assignee"
+                            disabled={merchantAssigning}
+                            onClick={() =>
+                              void assignMerchant(profile.id, merchant.id)
+                            }
+                          >
+                            <div className="merchant-owner-avatar">
+                              {initials(profile.fullName)}
+                            </div>
+                            <div>
+                              <strong>{profile.fullName}</strong>
+                              <span>
+                                {profile.email ??
+                                  profile.phone ??
+                                  "Compte RUBIGO"}
+                              </span>
+                            </div>
+                            <Link2 size={15} />
+                          </button>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="merchant-assignment-message">
+                        <UserRound size={17} />
+                        <span>
+                          Aucun commerçant validé et disponible pour cette
+                          association.
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                ) : null}
+              </article>
+            ))}
+
+            {!merchantDirectory.length ? (
+              <div className="merchant-admin-empty">
+                <Store size={24} />
+                <strong>Aucun commerce trouvé</strong>
+                <span>
+                  Modifiez les filtres ou la recherche pour afficher d'autres
+                  commerces.
+                </span>
+              </div>
+            ) : null}
+          </div>
+        </section>
+      </>
+    );
+  };
+
   const renderSimpleSection = (
     title: string,
     description: string,
@@ -988,11 +1360,7 @@ export function AdminDashboard({
               <ShoppingCart />,
             )
           ) : section === "merchants" ? (
-            renderSimpleSection(
-              "Commerces",
-              "Les commerces sont encore partiellement issus de data.ts dans le projet. Cette section évite d’inventer des informations qui ne sont pas encore migrées.",
-              <Store />,
-            )
+            renderMerchants()
           ) : section === "drivers" ? (
             renderSimpleSection(
               "Livreurs",
@@ -1033,6 +1401,28 @@ export function AdminDashboard({
         </div>
       </main>
     </div>
+  );
+}
+
+function StatCard({
+  icon,
+  value,
+  label,
+  tone,
+}: {
+  icon: React.ReactNode;
+  value: number;
+  label: string;
+  tone: "green" | "orange" | "blue" | "purple";
+}) {
+  return (
+    <article className={`merchant-admin-stat ${tone}`}>
+      <div className="merchant-admin-stat-icon">{icon}</div>
+      <div>
+        <strong>{value}</strong>
+        <span>{label}</span>
+      </div>
+    </article>
   );
 }
 
