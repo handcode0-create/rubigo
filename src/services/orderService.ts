@@ -309,14 +309,31 @@ export const orderService = {
     )
   },
 
-  // Transitions marchand (pending -> accepted/merchant_rejected -> preparing -> ready).
-  // Réutilise advanceOrderStatus : la policy RLS "orders merchant local update"
-  // (migration 0007) est la seule vraie barrière — elle refuse déjà toute
-  // tentative de sortir de ce périmètre (ex. passer à 'driver_assigned').
-  async updateOrderStatusAsMerchant(orderId: string, status: OrderStatus): Promise<boolean> {
-    return this.advanceOrderStatus(orderId, status)
-  },
+  // Transitions marchand côté serveur.
+  // La RPC vérifie l'identité du commerçant, son merchant_local_id,
+  // l'appartenance de la commande au commerce et la transition autorisée.
+  async updateOrderStatusAsMerchant(
+    orderId: string,
+    status: OrderStatus,
+  ): Promise<boolean> {
+    const { data, error } = await supabase.rpc(
+      'merchant_update_order_status',
+      {
+        p_order_id: orderId,
+        p_status: status,
+      },
+    )
 
+    if (error) {
+      console.error(
+        '[RUBIGO] merchant_update_order_status:',
+        error.message,
+      )
+      return false
+    }
+
+    return data?.success === true
+  },
 
   async fetchAvailableDeliveryDrivers(): Promise<AvailableDeliveryDriver[]> {
     const { data, error } = await supabase.rpc('get_available_delivery_drivers')
